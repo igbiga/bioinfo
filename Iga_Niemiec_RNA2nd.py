@@ -75,6 +75,8 @@ def find_slb(left, right, struct): # funkcja odnajdująca pnie/pętle/bulge wew(
     print("Lewa:", left, "i prawa:", right)
 
     for n in range(len(left)): # zakres odp ilości "lewych części spinek" a więc i znalezionych spinek
+        rev_left = left[n][::-1]
+        print("Odwrotność:", rev_left)
         print("Dla ", n, "spinki część lewostronna ma długość: ", len(left[n]), " a prawostronna ma długość: ", len(right[n]))
         i = 0
         j = 0
@@ -85,27 +87,38 @@ def find_slb(left, right, struct): # funkcja odnajdująca pnie/pętle/bulge wew(
             # i += 1
             # j += 1
 
-            if left[n][-(i+1)] == "(" and right[n][j] == ")": #jeśli po obu stronach spinki nawiasy - identyfikacja jako pień
-                print(left[n][-(i+1)], "oraz",  right[n][i], "to pien")
+            if rev_left[i] == "(" and right[n][j] == ")": # jeśli po obu stronach spinki nawiasy - identyfikacja jako pień
+                print(rev_left[i], "oraz",  right[n][j], "to pien")
                 i += 1
                 j += 1
 
-            elif left[n][-(i+1)] == "." and right[n][j] == ".": #jeśli po obu stronach spinki nawiasy - identyfikacja jako pień
-                print(left[n][-(i+1)], "oraz",  right[n][i], "to petla")
+            elif rev_left [i] == "." and right[n][j] == ".": # jeśli po obu stronach spinki nawiasy - identyfikacja jako pień
+                print(rev_left[i], "oraz",  right[n][j], "to petla")
+
+                if rev_left [i+1] == "(" and right[n][j+1] == ".":
+                    print(rev_left[i+1], "oraz",  right[n][j+1], "to petla ale niesymetryczna z lewej")
+                    j += 1
+                elif rev_left [i+1] == "." and right[n][j+1] == ")":
+                    print(rev_left[i+1], "oraz",  right[n][j+1], "to petla ale niesymetryczna z prawej")
+                    i += 1
+                else:
+                    None
                 i += 1
                 j += 1
-
-            elif left[n][-(i+1)] == "(" and right[n][j] == ".": #jeśli po obu stronach spinki nawiasy - identyfikacja jako pień
-                print(left[n][-(i+1)], "oraz",  right[n][i], "to bulka prawa")
+                
+            elif rev_left[i] == "(" and right[n][j] == ".": # jeśli po obu stronach spinki nawiasy - identyfikacja jako pień
+                print(rev_left[i], "oraz",  right[n][j], "to bulka prawa")
                 j += 1
 
-            elif left[n][-(i+1)] == "." and right[n][j] == ")": #jeśli po obu stronach spinki nawiasy - identyfikacja jako pień
-                print(left[n][-(i+1)], "oraz",  right[n][i], "to bulka lewa")
+            elif rev_left[i] == "." and right[n][j] == ")": # jeśli po obu stronach spinki nawiasy - identyfikacja jako pień
+                print(rev_left[i], "oraz",  right[n][j], "to bulka lewa")
                 i += 1
             else:
                 print("??")
                 i += 1
                 j += 1
+
+
 
                 #     if sequence_in_progress == 0:
                 #         print(left[n][-(i+1)], "oraz",  right[n][i], "to stem")
@@ -128,7 +141,7 @@ def find_slb(left, right, struct): # funkcja odnajdująca pnie/pętle/bulge wew(
 
 
 # trzeba jeszcze:
-# bulka ma zmieniać liczenie tak jakby jej nie było
+# pętle trzeba doliczać do samego końca kropek
 # ze znalezieniem struktury dopisanie nowego słownika i jego cech do których będzie dodawane +1 w każdej iteracji
 # nowa struktura za każdy razem kiedy poprzednia jest "przerwana"
 # koniec kiedy kolejnymi znakami są .. i nawiasy w 2 stronę
@@ -136,13 +149,11 @@ def find_slb(left, right, struct): # funkcja odnajdująca pnie/pętle/bulge wew(
 
 # każdy s/b/l
 lista_lewa = ["(((...((..(", "((((....((((."]
-lista_prawa = [")))....)))..", ")).."]
+lista_prawa = [")))....))).", ")).."]
 
 print(find_slb(lista_lewa, lista_prawa, structures))
 
 # print(" A teraz nasza sekw:", find_slb(left_hairpin_side, right_hairpin_side))
-
-
 
 
 
