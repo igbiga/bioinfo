@@ -1,3 +1,6 @@
+# zadanie:
+# zamiana struktury 2nd RNA zapisane w formacie dot-bracket na graf przedstawiający rozmieszczenie poszczególnych struktur
+
 import re
 in_file = open("C:/Users/Igusia/Documents/example.txt")
 in_file2 = in_file.read().replace("\n", "")
@@ -6,7 +9,7 @@ input_file = str(in_file2)
 #print()
 # importowanie pliku wejściowego, usunięcie newline i zamienienie na string
 
-bases = ["A", "C", "U", "T", "N"]
+bases = ["A", "C", "U", "G", "N"]
 signs = [".", "(", ")", "[", "]", ">", "<", "{", "}"]
 # listy zasad azotowych (po nich następuje właściwa sekwencja dot-bracket, oraz znaków w poszukiewanym formacie
 
@@ -38,6 +41,8 @@ for m in hairpin_pattern.finditer(dot_bracket_seq): # pętla dla każdego patter
 print("Znalezione struktury spinek:\n", hairpins)
 # stworzenie listy słowników z których każdy będzie zawierał inf o kolejnych spinkach: rozpoczęcie, zakończenie i długość
 
+########
+
 structures = []
 for n in range(len(hairpins)):
     structures.append([])
@@ -46,6 +51,7 @@ print(structures) # lista z poszczególnymi strukturami liniowymi.
 # każda str jest zapisana w osobnej liście skł się ze słowników z informacjami
 # o jej składnikach tj spinkach/pniach/pętlach/bulge, miejscach ich rozpoczecia i zakończenia w str i długości
 
+#######
 
 # wyszukiwanie pnia/bulge/pętli wew
 
@@ -70,31 +76,33 @@ print("Lista sekwencji po lewej stronie spinek:", left_hairpin_side)
 print("Lista sekwencji po prawej stronie spinek:", right_hairpin_side)
 
 
-# def find_slb(left, right): # funkcja odnajdująca pnie/pętle/bulge wew(stems/bulges/loops) połączone liniowo ze spinkami
-#
-#     for n in range(len(left)): # zakres odp ilości "lewych części spinek" a więc i znalezionych spinek
-#         print("Dla ", n, "spinki część lewostronna ma długość: ", len(left[n]), " a prawostronna ma długość: ", len(right[n]))
-#         structure_lenght = len(structures[n]) # zmienna oznaczająca aktualną długość listy odpowiadającej strukturze liniowej do której dopisywane są kolejne el: pnie/pętle itp
-#
-#         # for i in range(len(left[n])): # zakres odp długości n-tej "lewej sekwencji"
-#         #     print(i)
-#         #     sequence_in_progress = 0
-#         #
-#         #     for j in range(len(right[n])): # dla zakresu znaków znajdujących się w mniejszej części (prawej lub lewej) dla danej sekwencji
-#         #         print(j)
-#         #         if left[n][-(i+1)] == "(" and right[n][j] == ")": #jeśli po obu stronach spinki nawiasy - identyfikacja jako pień
-#         #             print("to pien")
-#         #             # if sequence_in_progress == 0:
-#         #             #     print(left[n][-(i+1)], "oraz",  right[n][i], "to stem")
-#         #             #     structures[n].append({"type":"stem", "startl": left[n][-(i+1)], "startr": right[n][i]})
-#         #             #     structure_lenght += 1
-#         #             # sequence_in_progress = 1
-#         #         else:
-#         #             print("to NIE pien")
-#     #                 sequence_in_progress = 0
-#     #                 structures[n][structure_lenght]["endl"] = -(i+1)
-#     #                 structures[n][structure_lenght]["endr"] = i
-    # print(structures)
+def find_slb(left, right, struct): # funkcja odnajdująca pnie/pętle/bulge wew(stems/bulges/loops) połączone liniowo ze spinkami
+    print("Lewa:", left, "i prawa:", right)
+
+    for n in range(len(left)): # zakres odp ilości "lewych części spinek" a więc i znalezionych spinek
+        print("Dla ", n, "spinki część lewostronna ma długość: ", len(left[n]), " a prawostronna ma długość: ", len(right[n]))
+
+        for i in range(len(left[n])): # zakres odp długości n-tej "lewej sekwencji"
+            structure_lenght = len(struct[n]) # zmienna oznaczająca aktualną długość listy odpowiadającej strukturze liniowej do której dopisywane są kolejne el: pnie/pętle itp
+            print("To jest i:", i)
+            sequence_in_progress = 0
+
+            for j in range(len(right[n])): # dla zakresu znaków znajdujących się w mniejszej części (prawej lub lewej) dla danej sekwencji
+                print("To jest j:", j)
+
+                if left[n][-(i+1)] == "(" and right[n][j] == ")": #jeśli po obu stronach spinki nawiasy - identyfikacja jako pień
+                    print("to pien")
+        #             # if sequence_in_progress == 0:
+        #             #     print(left[n][-(i+1)], "oraz",  right[n][i], "to stem")
+        #             #     structures[n].append({"type":"stem", "startl": left[n][-(i+1)], "startr": right[n][i]})
+        #             #     structure_lenght += 1
+        #             # sequence_in_progress = 1
+        #         else:
+        #             print("to NIE pien")
+    #                 sequence_in_progress = 0
+    #                 structures[n][structure_lenght]["endl"] = -(i+1)
+    #                 structures[n][structure_lenght]["endr"] = i
+
 
                 # if left[n][-(i+1)] == "." and right[n][i] == ".": #jeśli po obu stronach spinki kropki - identyfikacja jako pętla
                 #     print(left[n][-(i+1)], "oraz",  right[n][i], "to loop")
@@ -102,10 +110,6 @@ print("Lista sekwencji po prawej stronie spinek:", right_hairpin_side)
                # if (left[n][-(i+1)] == "." and right[n][i] == ")") or (left[n][-(i+1)] == "(" and right[n][i] == "."):
         #             print(left[n][-(i+1)], "oraz",  right[n][i], "to bulge")
         # print("Koniec struktury")
-
-
-### ..(((..(((...)))))))....)
-
 
 
 # trzeba jeszcze:
@@ -116,10 +120,10 @@ print("Lista sekwencji po prawej stronie spinek:", right_hairpin_side)
 
 
 # każdy s/b/l
-# lista_lewa = ["(((...(((..(", "((((....((((.", "(((..(((.."]
-# lista_prawa = [")))....)))..", "))..", "....))))..)"]
-#
-# print(find_slb(lista_lewa, lista_prawa))
+lista_lewa = ["(((...(((..(", "((((....((((."]
+lista_prawa = [")))....)))..", ")).."]
+
+print(find_slb(lista_lewa, lista_prawa, structures))
 
 # print(" A teraz nasza sekw:", find_slb(left_hairpin_side, right_hairpin_side))
 
@@ -144,13 +148,3 @@ print("Lista sekwencji po prawej stronie spinek:", right_hairpin_side)
 #     if i in range(0,5) and i in range(0,3):
 #         print(i)
 
-print("TESTTESTTEST")
-kkk = [1,2,3,4,5]
-
-def dodawanie(l):
-    for i in l:
-        i = 1
-    return l
-
-lll = dodawanie(kkk)
-print(lll)
