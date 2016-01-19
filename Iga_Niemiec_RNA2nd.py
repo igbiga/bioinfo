@@ -76,18 +76,20 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
     print("Lewa:", left, "i prawa:", right)
 
     for n in range(len(left)):  # zakres odp ilości "lewych części spinek" a więc i znalezionych spinek
-        rev_left = left[n][::-1]
+        rev_left = left[n][::-1] # odwrócenie sekwencji "lewych cześci spinek" aby łatwiejsze było porównywanie sekwencji "prawej" i "lewej"
         print("Odwrotność:", rev_left)
         print("Dla ", n, "spinki część lewostronna ma długość: ", len(left[n]), " a prawostronna ma długość: ", len(right[n]))
         sequence_in_progress = 0  # zmienna oznaczająca strukturę w której pętli obecni znajduje się funkcja
-        i = 0
-        j = 0
-        while i in range(len(left[n])) and j in range(len(right[n])): # zakres odp długości n-tej "lewej" i "prawej" sekwencji
+        i = 0 # zmienna oznaczająca znak w sekwencji "lewej"
+        j = 0 # zmienna oznaczająca znak w sekwencji "prawej"
+
+        while i in range(len(rev_left[n])) and j in range(len(right[n])): # zakres odp długości n-tej " odwróconej lewej" i "prawej" sekwencji
             print("To jest i:", i, "a to j:", j)
             structure_length = len(struct[n])  # zmienna oznaczająca aktualną długość listy odpowiadającej strukturze liniowej do której dopisywane są kolejne el: pnie/pętle itp
 
             if rev_left[i] == "(" and right[n][j] == ")":  # jeśli po obu stronach spinki nawiasy - identyfikacja jako pień
                 print(rev_left[i], "oraz",  right[n][j], "to pien")
+
                 if sequence_in_progress != 1:
                     struct[n].append({'type':'stem', 'start_l': i, 'start_r': j, 'length':1 })
                     #structure_length += 1
@@ -97,19 +99,11 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
                 i += 1
                 j += 1
                 print("calutka lista:", struct)
+                print ("Nowe i:", i , "oraz j:", j)
                 print("dlugosc struktury", structure_length)
 
-            elif rev_left [i] == "." and right[n][j] == ".": # jeśli po obu stronach spinki kropki - identyfikacja jako pętla
-                print(rev_left[i], "oraz",  right[n][j], "to petla")
-
-                if rev_left [i+1] == "(" and right[n][j+1] == ".":
-                    print(rev_left[i+1], "oraz",  right[n][j+1], "to petla ale niesymetryczna z lewej")
-                    j += 1
-                elif rev_left [i+1] == "." and right[n][j+1] == ")":
-                    print(rev_left[i+1], "oraz",  right[n][j+1], "to petla ale niesymetryczna z prawej")
-                    i += 1
-                else:
-                    None
+            elif rev_left[i] == "." and right[n][j] == ".": # jeśli po obu stronach spinki kropki - identyfikacja jako pętla
+                # print(rev_left[i], "oraz",  right[n][j], "to petla")
 
                 if sequence_in_progress != 3:
                     struct[n].append({'type':'loop', 'start_l': i, 'start_r': j, 'length':2 }) # TO TEŻ NIE POWINNO SIĘ TAK DODAWAĆ BO CZASEM JEST NIESYMETRYCZNE -     ale olać to
@@ -118,13 +112,29 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
                 elif sequence_in_progress == 3:
                     struct[n][-1]["length"] += 2
 
-                i += 1 ######## NIE JESTEM PEWNA CZY TO POWINNO BYC TUTAJ CZY PO ELSE ALE CHYBA JEST OK BO SIE ZGADZA
-                j += 1
+
+                if (rev_left[i+1] == "." and right[n][j+1] == ".") or rev_left [i+1] == "(" and right[n][j+1] == ")":
+                    print(rev_left[i], "oraz",  right[n][j], "to petla")
+                    i += 1
+                    j += 1
+                elif rev_left[i+1] == "(" and right[n][j+1] == ".":
+                    print(rev_left[i+1], "oraz",  right[n][j+1], "to petla ale niesymetryczna z lewej") # TU TRZEBABY DODAC WARUNEK CO JEŚLI WYJDZIE Z RANGE ALE JEŚLI BEDZIE SIĘ ODCINAĆ
+                    # FRAGMENTY JEDNONICIOWE NA KOŃCACH TO NIE TRZEBA
+                    j += 1
+                elif rev_left[i+1] == "." and right[n][j+1] == ")":
+                    print(rev_left[i+1], "oraz",  right[n][j+1], "to petla ale niesymetryczna z prawej")
+                    i += 1
+                else:
+                    None
+
+                # i += 1 ######## NIE JESTEM PEWNA CZY TO POWINNO BYC TUTAJ CZY PO ELSE ALE CHYBA JEST OK BO SIE ZGADZA
+                # j += 1
                 print("calutka lista:", struct)
                 print("dlugosc struktury", structure_length)
 
             elif rev_left[i] == "(" and right[n][j] == ".": # jeśli po obu stronach spinki nawiasy - identyfikacja jako pień
                 print(rev_left[i], "oraz",  right[n][j], "to bulka prawa")
+
                 if sequence_in_progress != 2:
                     struct[n].append({'type':'bulge', 'start_r': j, 'length':1 })
                     #structure_length += 1
@@ -137,6 +147,7 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
 
             elif rev_left[i] == "." and right[n][j] == ")": # jeśli po obu stronach spinki nawiasy - identyfikacja jako pień
                 print(rev_left[i], "oraz",  right[n][j], "to bulka lewa")
+
                 if sequence_in_progress != 2:
                     struct[n].append({'type':'bulge', 'start_l': i, 'length':1 })
                     #structure_length += 1
@@ -179,9 +190,12 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
 
 # każdy s/b/l
 lista_lewa = ["(((...((..(", "((((....((((."]
-lista_prawa = [")))....))).", ")).."]
+lista_prawa = [")))....))).((", ")).."]
 
-print(find_slb(left_hairpin_side, right_hairpin_side, structures)) ##################   NIE DZIAŁA DLA NORMALNEGO OUTPUTU !!!!!!!!!!!!!!!!!!!!!1
+lista_lewa2 = ['((((((((((.....((((((((....(((((', '((((((((((.....((((((((....(((((((.............))))..)))...)))))).)).(((((((..((((']
+lista_prawa2 = ['))))..)))...)))))).)).(((((((..((((((....))))))..)))))))...))))))))))', '))))))..)))))))...))))))))))']
+
+print(find_slb(lista_lewa, lista_prawa, structures)) ##################   NIE DZIAŁA DLA NORMALNEGO OUTPUTU !!!!!!!!!!!!!!!!!!!!!1
 
 # print(" A teraz nasza sekw:", find_slb(left_hairpin_side, right_hairpin_side))
 
