@@ -37,7 +37,7 @@ hairpin_pattern = re.compile(hairpin_pat) # kompilacja wyrażenia regularnego
 
 hairpins = []
 for m in hairpin_pattern.finditer(dot_bracket_seq): # pętla dla każdego patternu wyszukanego w sekwencji
-    hairpins.append({'type': 'hairpin', 'start': m.start() - 1, 'end': m.end() - 1, 'length': m.end() - m.start()})
+    hairpins.append({'type': 'hairpin', 'start': m.start() + 1, 'end': m.end() - 1, 'length': m.end() - m.start()})
 print("Znalezione struktury spinek:\n", hairpins)
 # stworzenie listy słowników z których każdy będzie zawierał inf o kolejnych spinkach: rozpoczęcie, zakończenie i długość
 
@@ -74,6 +74,10 @@ print("Lista sekwencji po prawej stronie spinek:", right_hairpin_side)
 
 def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew(stems/bulges/loops) połączone liniowo ze spinkami
     print("Lewa:", left, "i prawa:", right)
+    ending_left_pat = "\.+\)" # wyrażenie regularne odnajdujące koniec lewostronny danej struktury liniowej (tj kropki i nawias w odwrotą stronę)
+    ending_left_pattern = re.compile(ending_left_pat) # kompilacja wyrażenia regularnego
+    ending_right_pat = "\.+\(" # jw. - koniec prawostronny
+    ending_right_pattern = re.compile(ending_right_pat) # kompilacja wyrażenia regularnego
 
     for n in range(len(left)):  # zakres odp ilości "lewych części spinek" a więc i znalezionych spinek
         rev_left = left[n][::-1] # odwrócenie sekwencji "lewych cześci spinek" aby łatwiejsze było porównywanie sekwencji "prawej" i "lewej"
@@ -83,7 +87,7 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
         i = 0 # zmienna oznaczająca znak w sekwencji "lewej"
         j = 0 # zmienna oznaczająca znak w sekwencji "prawej"
 
-        while i in range(len(rev_left)) and j in range(len(right[n])): # zakres odp długości n-tej " odwróconej lewej" i "prawej" sekwencji
+        while i in range(len(rev_left)) and j in range(len(right[n])): # zakres odp długości " odwróconej lewej" i n-tej "prawej" sekwencji
             print("To jest i:", i, "a to j:", j)
             structure_length = len(struct[n])  # zmienna oznaczająca aktualną długość listy odpowiadającej strukturze liniowej do której dopisywane są kolejne el: pnie/pętle itp
 
@@ -92,31 +96,25 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
 
                 if sequence_in_progress != 1:
                     struct[n].append({'type':'stem', 'start_l': i, 'start_r': j, 'length':1 })
-                    #structure_length += 1
-                    sequence_in_progress = 1
+                    sequence_in_progress = 1 # po wejściu do danej pętli np pnia, do listy dodawany jest nowy słownik zaw inf o strukturze
                 elif sequence_in_progress == 1:
-                    struct[n][-1]["length"] += 1
+                    struct[n][-1]["length"] += 1 # przy kolejnym wejściu w tą samą pętlę dodawane jest jedynie +1 do wartości długości
                 i += 1
-                j += 1
+                j += 1 # przechodzenie symetryczne do kolejnych znaków
                 print("calutka lista:", struct)
                 print ("Nowe i:", i , "oraz j:", j)
                 print("dlugosc struktury", structure_length)
 
             elif rev_left[i] == "." and right[n][j] == ".": # jeśli po obu stronach spinki kropki - identyfikacja jako pętla
-                # print(rev_left[i], "oraz",  right[n][j], "to petla")
+                print(rev_left[i], "oraz",  right[n][j], "to petla")
 
                 if sequence_in_progress != 3:
-                    struct[n].append({'type':'loop', 'start_l': i, 'start_r': j, 'length':2 }) # TO TEŻ NIE POWINNO SIĘ TAK DODAWAĆ BO CZASEM JEST NIESYMETRYCZNE -     ale olać to
-                    #structure_length += 1
+                    struct[n].append({'type':'loop', 'start_l': i, 'start_r': j, 'length':2 }) # TO TEŻ NIE POWINNO SIĘ TAK DODAWAĆ BO CZASEM JEST NIESYMETRYCZNE 
                     sequence_in_progress = 3
                 elif sequence_in_progress == 3:
-                    struct[n][-1]["length"] += 2
+                    struct[n][-1]["length"] += 2 # działanie jak przy poprzedniej pętli
 
 
-                if (rev_left[i+1] == "." and right[n][j+1] == ".") or rev_left [i+1] == "(" and right[n][j+1] == ")":
-                    print(rev_left[i], "oraz",  right[n][j], "to petla")
-                    i += 1
-                    j += 1
                 if rev_left[i+1] == "(" and right[n][j+1] == ".":
                     print(rev_left[i+1], "oraz",  right[n][j+1], "to petla ale niesymetryczna z lewej") # TU TRZEBABY DODAC WARUNEK CO JEŚLI WYJDZIE Z RANGE ALE JEŚLI BEDZIE SIĘ ODCINAĆ
                     # FRAGMENTY JEDNONICIOWE NA KOŃCACH TO NIE TRZEBA
@@ -124,11 +122,10 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
                 elif rev_left[i+1] == "." and right[n][j+1] == ")":
                     print(rev_left[i+1], "oraz",  right[n][j+1], "to petla ale niesymetryczna z prawej")
                     i += 1
-                else:
-                    None
 
-                # i += 1 ######## NIE JESTEM PEWNA CZY TO POWINNO BYC TUTAJ CZY PO ELSE ALE CHYBA JEST OK BO SIE ZGADZA
-                # j += 1
+
+                i += 1
+                j += 1
                 print("calutka lista:", struct)
                 print("dlugosc struktury", structure_length)
 
@@ -137,7 +134,6 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
 
                 if sequence_in_progress != 2:
                     struct[n].append({'type':'bulge', 'start_r': j, 'length':1 })
-                    #structure_length += 1
                     sequence_in_progress = 2
                 elif sequence_in_progress == 2:
                     struct[n][-1]["length"] += 1
@@ -150,41 +146,24 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
 
                 if sequence_in_progress != 2:
                     struct[n].append({'type':'bulge', 'start_l': i, 'length':1 })
-                    #structure_length += 1
                     sequence_in_progress = 2
                 elif sequence_in_progress == 2:
                     struct[n][-1]["length"] += 1
                 i += 1
                 print("calutka lista:", struct)
                 print("dlugosc struktury", structure_length)
+
+            # teraz będzie kończenie funkcji gdy znajdzie "." i ) po lewej lub ( po prawej
+            # elif rev_left[i] == "." and right[n][j] == ")":
+            #     for m in hairpin_pattern.finditer(rev_left): # pętla dla każdego patternu wyszukanego w sekwencji
+            #     hairpins.append({'type': 'hairpin', 'start': m.start() + 1, 'end': m.end() - 1, 'length': m.end() - m.start()}) # TO DO OGARNIECIA
             else:
-                i += 1
-                j += 1
+                break
 
 
-
-                #     if sequence_in_progress == 0:
-                #         print(left[n][-(i+1)], "oraz",  right[n][i], "to stem")
-                #         structures[n].append({"type":"stem", "startl": left[n][-(i+1)], "startr": right[n][i]})
-                #         structure_lenght += 1
-                #     sequence_in_progress = 1
-                # else:
-                #     print("to NIE pien")
-                #     sequence_in_progress = 0
-                #     structures[n][structure_lenght]["endl"] = -(i+1)
-                #     structures[n][structure_lenght]["endr"] = i
-
-
-                # if left[n][-(i+1)] == "." and right[n][i] == ".": #jeśli po obu stronach spinki kropki - identyfikacja jako pętla
-                #     print(left[n][-(i+1)], "oraz",  right[n][i], "to loop")
-                # else:
-               # if (left[n][-(i+1)] == "." and right[n][i] == ")") or (left[n][-(i+1)] == "(" and right[n][i] == "."):
-        #             print(left[n][-(i+1)], "oraz",  right[n][i], "to bulge")
-        # print("Koniec struktury")
 
 
 # trzeba jeszcze:
-
 # koniec kiedy kolejnymi znakami są .. i nawiasy w 2 stronę
 # pozmieniać te słowniki: zamienić indeksy z rev_left na left oraz dodać wartości end_l i end_r
 
@@ -196,24 +175,20 @@ lista_prawa = [")))....))).((", ")).."]
 lista_lewa2 = ['((((((((((.....((((((((....(((((', '((((((((((.....((((((((....(((((((.............))))..)))...)))))).)).(((((((..((((']
 lista_prawa2 = ['))))..)))...)))))).)).(((((((..((((((....))))))..)))))))...))))))))))', '))))))..)))))))...))))))))))']
 
-print(find_slb(lista_lewa2, lista_prawa2, structures))
-
-# print(" A teraz nasza sekw:", find_slb(left_hairpin_side, right_hairpin_side))
+print(find_slb(left_hairpin_side, right_hairpin_side, structures))
 
 
 
-# re.findall(str[0:pierwsza_spinka_init])
-# re.findall(str[pierwsza_spinka_end:end])
-# lista_pni[[[12,15],[18,21]],[[]]]
 
-print()
-print("proba dodawania")
-lista_list = [[{1:'a', 2:'b'}, {3:'c', 4:'d'}], [{'z':24, 'y':23}, {'x':22, 'w':21}], ["hey", "you"]]
-lista_list[0].append({'f':17})
-print("Lista", lista_list)
-lista_list[1][0]["z"] += 1
-print("Lista2", lista_list)
-print(lista_list[2][0][1])
+#
+# print()
+# print("proba dodawania")
+# lista_list = [[{1:'a', 2:'b'}, {3:'c', 4:'d'}], [{'z':24, 'y':23}, {'x':22, 'w':21}], ["hey", "you"]]
+# lista_list[0].append({'f':17})
+# print("Lista", lista_list)
+# lista_list[1][0]["z"] += 1
+# print("Lista2", lista_list)
+# print(lista_list[2][0][1])
 
 
 
@@ -222,4 +197,8 @@ print(lista_list[2][0][1])
 # for i in range(0,100):
 #     if i in range(0,5) and i in range(0,3):
 #         print(i)
+
+
+
+
 
