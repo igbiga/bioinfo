@@ -83,7 +83,7 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
         i = 0 # zmienna oznaczająca znak w sekwencji "lewej"
         j = 0 # zmienna oznaczająca znak w sekwencji "prawej"
 
-        while i in range(len(rev_left[n])) and j in range(len(right[n])): # zakres odp długości n-tej " odwróconej lewej" i "prawej" sekwencji
+        while i in range(len(rev_left)) and j in range(len(right[n])): # zakres odp długości n-tej " odwróconej lewej" i "prawej" sekwencji
             print("To jest i:", i, "a to j:", j)
             structure_length = len(struct[n])  # zmienna oznaczająca aktualną długość listy odpowiadającej strukturze liniowej do której dopisywane są kolejne el: pnie/pętle itp
 
@@ -117,7 +117,7 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
                     print(rev_left[i], "oraz",  right[n][j], "to petla")
                     i += 1
                     j += 1
-                elif rev_left[i+1] == "(" and right[n][j+1] == ".":
+                if rev_left[i+1] == "(" and right[n][j+1] == ".":
                     print(rev_left[i+1], "oraz",  right[n][j+1], "to petla ale niesymetryczna z lewej") # TU TRZEBABY DODAC WARUNEK CO JEŚLI WYJDZIE Z RANGE ALE JEŚLI BEDZIE SIĘ ODCINAĆ
                     # FRAGMENTY JEDNONICIOWE NA KOŃCACH TO NIE TRZEBA
                     j += 1
@@ -158,7 +158,8 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
                 print("calutka lista:", struct)
                 print("dlugosc struktury", structure_length)
             else:
-                None
+                i += 1
+                j += 1
 
 
 
@@ -195,7 +196,7 @@ lista_prawa = [")))....))).((", ")).."]
 lista_lewa2 = ['((((((((((.....((((((((....(((((', '((((((((((.....((((((((....(((((((.............))))..)))...)))))).)).(((((((..((((']
 lista_prawa2 = ['))))..)))...)))))).)).(((((((..((((((....))))))..)))))))...))))))))))', '))))))..)))))))...))))))))))']
 
-print(find_slb(lista_lewa, lista_prawa, structures)) ##################   NIE DZIAŁA DLA NORMALNEGO OUTPUTU !!!!!!!!!!!!!!!!!!!!!1
+print(find_slb(lista_lewa2, lista_prawa2, structures))
 
 # print(" A teraz nasza sekw:", find_slb(left_hairpin_side, right_hairpin_side))
 
