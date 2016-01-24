@@ -46,6 +46,7 @@ print("Znalezione struktury spinek:\n", hairpins)
 structures = []
 for n in range(len(hairpins)):
     structures.append([])
+    #structures[n].append("L"+ n)
     structures[n].append(hairpins[n])
 print(structures) # lista z poszczególnymi strukturami liniowymi.
 # każda str jest zapisana w osobnej liście skł się ze słowników z informacjami
@@ -136,24 +137,27 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
                 # print(rev_left[i], "oraz",  right[n][j], "to petla")
 
                 if sequence_in_progress != 3:
-                    struct[n].append({'type':'loop', 'start_l': i, 'start_r': j, 'length':2 }) # TO NIE POWINNO SIĘ TAK DODAWAĆ BO CZASEM JEST NIESYMETRYCZNE
+                    struct[n].append({'type':'loop', 'start_l': i, 'start_r': j, 'length':2, 'assymetry': 'no' })
                     sequence_in_progress = 3
+                    i += 1
+                    j += 1
                 elif sequence_in_progress == 3:
-                    struct[n][-1]["length"] += 2 # działanie jak przy poprzedniej pętli
 
+                    if rev_left[i+1] == "(" and right[n][j+1] == ".":
+                        # print(rev_left[i+1], "oraz",  right[n][j+1], "to petla ale niesymetryczna z lewej")
+                        struct[n][-1]["length"] += 1
+                        struct[n][-1]["assymetry"] = 'right'
+                        j += 1 # w przypadku niesyetrycznej pętli dodawanie "i" i "j" niesymetryczne tj tylko tam gdzie "."
+                    elif rev_left[i+1] == "." and right[n][j+1] == ")":
+                        # print(rev_left[i+1], "oraz",  right[n][j+1], "to petla ale niesymetryczna z prawej")
+                        struct[n][-1]["length"] += 1
+                        struct[n][-1]["assymetry"] = 'left'
+                        i += 1 # j.w
+                    else:
+                        struct[n][-1]["length"] += 2 # działanie jak przy poprzedniej pętli
+                        i += 1
+                        j += 1 # jeśli pętla jest symetryczna - symetryczne dodawanie "i" i "j"
 
-                if rev_left[i+1] == "(" and right[n][j+1] == ".":
-                    # print(rev_left[i+1], "oraz",  right[n][j+1], "to petla ale niesymetryczna z lewej")
-                    j += 1 # w przypadku niesyetrycznej pętli dodawanie "i" i "j" niesymetryczne tj tylko tam gdzie "."
-                elif rev_left[i+1] == "." and right[n][j+1] == ")":
-                    # print(rev_left[i+1], "oraz",  right[n][j+1], "to petla ale niesymetryczna z prawej")
-                    i += 1 # j.w
-
-
-                i += 1
-                j += 1 # jeśli pętla jest symetryczna - symetryczne dodawanie "i" i "j"
-                # print("calutka lista:", struct)
-                # print("dlugosc struktury", structure_length)
 
             elif rev_left[i] == "(" and right[n][j] == ".": # jeśli po jednej stronie spinki nawias a po 2giej kropka - identyfikacja jako bulge
                 # print(rev_left[i], "oraz",  right[n][j], "to bulka prawa")
@@ -184,16 +188,114 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
 
 
 linear_1st_structures_list = find_slb(left_hairpin_side, right_hairpin_side, structures)
-#print(find_slb(left_hairpin_side, right_hairpin_side, structures))
+print(linear_1st_structures_list)
+
+
+# DO TEJ PORY WSZYSTKO ŁADNIE - TRZEBA TYLKO PRZECZYŚCIĆ Z PRINTÓW
 
 ###################################################################################
 
-# dodanie końców (start + len), zamieana na indeksy oryginalnej sekwencji
+# normalizacja numerów indeksów aby zgadzały się z indeksami wejściowej sekwencji
+
+for k in range(len(linear_1st_structures_list)):
+    for structure in linear_1st_structures_list[k]:
+        if "start_l" in structure.keys(): # warunek dodany, gdyż spinka ma tylko 1 początek i koniec a bulge mają długość tylko z 1 strony
+            if structure['type'] == 'loop': # długość spinki jest liczona "podwójnie" dlatego konieczna jest pętla do poprawy tego
+                if structure['length'] % 2 == 0:
+                    structure['end_l'] = structure['start_l'] + (structure['length']/2) # jeśli pętla symetryczna koniec to długośc/2
+                elif structure['length'] % 2 == 1:
+                    structure['end_l'] = structure['start_l'] + ((structure['length']-1)/2) # jeśli pętla niesymetryczna koniec to (długość-1)/2
+
+                if structure['assymetry'] == 'left': # branie pod uwagę asymetryczności pętli - jeden z końców jest dłuższy niż drugi
+                    structure['end_l'] += 1 # ASYMETRIA MOŻE BYĆ > 1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            else:
+                structure['end_l'] = structure['start_l'] + structure['length']
+                # dopisanie do kazdego słownika (spinki/pętli/pnia/bulge) indeks zakończenia struktury po lewej stronie
+                # dodając wartości początku i długości
+
+            structure['start_l'] = len(left_hairpin_side[k]) - structure['start_l']
+            structure['end_l'] = len(left_hairpin_side[k]) - structure['end_l']
+            # normalizacja indeksów sekwencji
+            # sekwencje lewe były indeksowane na odwróconym stringu, dlatego od jego dł odejmuje się indeks
+
+        if "start_r" in structure.keys(): # analogiczna pętla dla części prawych
+            if structure['type'] == 'loop':
+                if structure['length'] % 2 == 0:
+                    structure['end_r'] = structure['start_r'] + (structure['length']/2)
+                elif structure['length'] % 2 == 1:
+                    structure['end_r'] = structure['start_r'] + ((structure['length']-1)/2)
+
+                if structure['assymetry'] == 'right':
+                    structure['end_r'] += 1
+            else:
+                structure['end_r'] = structure['start_r'] + structure['length']
+
+
+            structure['start_r'] = structure['start_r'] + linear_1st_structures_list[k][0]["end"]
+            structure['end_r'] = structure['end_r'] + linear_1st_structures_list[k][0]["end"]
+            # normalizacja indeksów sekwencji
+            # sekwencje prawe zaczynały się w raz z końcem danej spinki, do tej wartości trzeba dodac indeks
+
+
+
+print("Po znormalizowaniu indeksów;", linear_1st_structures_list)
+
+#############################################
+
 # zamiana odpowiednich znaków w sekwencji na nazwy struktur : A0, A1 itp
+linear_1st_structures_names = []
+for p in range(len(linear_1st_structures_list)):
+    start_place = linear_1st_structures_list[p][-1]["end_l"]
+    end_place = linear_1st_structures_list[p][-1]["end_r"]
+    linear_1st_structures_names.append({"name":"A"+str(p), "start":start_place, "end":end_place})
+# stworzenie nowej listy w której każda struktura liniowa otrzyma słownik z kluczami: imieniem, początkim i końcem
+print(linear_1st_structures_names)
+
+print(dot_bracket_seq)
+
+dot_bracket_seq_2nd = ""
+
+for p in range(len(linear_1st_structures_names)):
+    if p == 0:
+        dot_bracket_seq_2nd += dot_bracket_seq[:linear_1st_structures_names[p]["start"]] + linear_1st_structures_names[p]["name"] + dot_bracket_seq[linear_1st_structures_names[p]["end"]:linear_1st_structures_names[p+1]["start"]]
+
+    if p != 0 and p != (len(linear_1st_structures_names)-1):
+        dot_bracket_seq_2nd += linear_1st_structures_names[p]["name"] + dot_bracket_seq[linear_1st_structures_names[p]["end"]:linear_1st_structures_names[p+1]["start"]]
+
+    if p == (len(linear_1st_structures_names)-1):
+        dot_bracket_seq_2nd += linear_1st_structures_names[p]["name"] + dot_bracket_seq[linear_1st_structures_names[p]["end"]:]
+
+# zapisanie nowej wersji oryginalnej sekwencji, gdzie struktury liniowe zostaną zastąpione ich nazwami
+# początek sekwencji do startu 1szej (indeks 0) struktury liniowej, nazwa struktury, zakres od jej końca do kolejnej,
+# nazwa kolejnej struktury, zakres od jej końca do kolejnej (razy x)
+# nazwa ostatniej struktury, zakres od jej końca do końca sekwencji
+
+print("Nowa wersja oryginalnej sekwencji:", dot_bracket_seq_2nd)
+
+###########################################################
+
+# odnajdywanie skrzyżowań - kropki między strukturami liniowymi
+crossroad_pat = "\.*" # wyrażenie regularne odnajdujące skrzyżowanie - kropki pomiędzy strukturami liniowymi
+crossroad_pattern = re.compile(crossroad_pat) # kompilacja wyrażenia regularnego
+
+#for linear_structure in linear_1st_structures_names:
+
+
+
+
+
+#########################################################
+# CO JEŚLI ASYMETRIA PĘTLI JEST > 1 ??
 # wszystkie nowe struktury połączone tylko kropkami zapisujemy jako skrzyzowanie wraz z jego długością (wszystkie kropki po prawej i lewej aż do najbliższego nawiasu
 # powtórzeni funkcji find_slb traktując (skrzyżowanie) jako spinkę do włosów
 # inne skrzyżowania znalezione w tym czasie traktowane sa jako kolejna struktura liniowa B0 B1 itd
 # znowu rozbudowa algorytmu jak wcześniej aż do momentu kiedy będą tylko ... na końcach
+
+
+# usuwanie już na początku znaków pseudowęzłów
+# odszukiwanie indeksów pseudowęzłów i przypisywanie ich do konkretnych struktur
+
+# deal with igraph
 
 
 
@@ -226,5 +328,13 @@ linear_1st_structures_list = find_slb(left_hairpin_side, right_hairpin_side, str
 # p = []
 # print(len(p))
 
+# pustalista = []
+# for f in range(5):
+#     print(f)
+#     pustalista.append("A"+str(f))
+# print("Test", pustalista)
 
-
+# listka = [0,1]
+# for p in range(len(listka)):
+#     print(p)
+# print(len(listka)-1)
