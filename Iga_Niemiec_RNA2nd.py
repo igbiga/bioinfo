@@ -2,7 +2,7 @@
 # zamiana struktury 2nd RNA zapisane w formacie dot-bracket na graf przedstawiający rozmieszczenie poszczególnych struktur
 
 import re
-in_file = open("C:/Users/Igusia/Documents/example.txt")
+in_file = open("C:/Users/Igusia/Documents/example2.txt")
 in_file2 = in_file.read().replace("\n", "")
 input_file = str(in_file2)
 #print("Plik wejsciowy: \n", input_file)
@@ -135,24 +135,22 @@ def find_slb(left, right, struct):  # funkcja odnajdująca pnie/pętle/bulge wew
 
             elif rev_left[i] == "." and right[n][j] == ".": # jeśli po obu stronach spinki kropki - identyfikacja jako pętla
                 # print(rev_left[i], "oraz",  right[n][j], "to petla")
-
                 if sequence_in_progress != 3:
-                    struct[n].append({'type':'loop', 'start_l': i, 'start_r': j, 'length':2, 'assymetry': 'no' })
+                    struct[n].append({'type':'loop', 'start_l': i, 'start_r': j, 'length':0, 'assymetry_l': 0, 'assymetry_r':0 })
                     sequence_in_progress = 3
-                    i += 1
-                    j += 1
-                elif sequence_in_progress == 3:
 
-                    if rev_left[i+1] == "(" and right[n][j+1] == ".":
+                if sequence_in_progress == 3:
+
+                    if rev_left[i+1] == "." and right[n][j+1] == ")":
                         # print(rev_left[i+1], "oraz",  right[n][j+1], "to petla ale niesymetryczna z lewej")
                         struct[n][-1]["length"] += 1
-                        struct[n][-1]["assymetry"] = 'right'
-                        j += 1 # w przypadku niesyetrycznej pętli dodawanie "i" i "j" niesymetryczne tj tylko tam gdzie "."
-                    elif rev_left[i+1] == "." and right[n][j+1] == ")":
+                        struct[n][-1]["assymetry_l"] += 1
+                        i += 1 # w przypadku niesyetrycznej pętli dodawanie "i" i "j" niesymetryczne tj tylko tam gdzie "."
+                    elif rev_left[i+1] == "(" and right[n][j+1] == ".":
                         # print(rev_left[i+1], "oraz",  right[n][j+1], "to petla ale niesymetryczna z prawej")
                         struct[n][-1]["length"] += 1
-                        struct[n][-1]["assymetry"] = 'left'
-                        i += 1 # j.w
+                        struct[n][-1]["assymetry_r"] += 1
+                        j += 1 # j. w.
                     else:
                         struct[n][-1]["length"] += 2 # działanie jak przy poprzedniej pętli
                         i += 1
@@ -200,14 +198,14 @@ print(linear_1st_structures_list)
 for k in range(len(linear_1st_structures_list)):
     for structure in linear_1st_structures_list[k]:
         if "start_l" in structure.keys(): # warunek dodany, gdyż spinka ma tylko 1 początek i koniec a bulge mają długość tylko z 1 strony
-            if structure['type'] == 'loop': # długość spinki jest liczona "podwójnie" dlatego konieczna jest pętla do poprawy tego
-                if structure['length'] % 2 == 0:
-                    structure['end_l'] = structure['start_l'] + (structure['length']/2) # jeśli pętla symetryczna koniec to długośc/2
-                elif structure['length'] % 2 == 1:
-                    structure['end_l'] = structure['start_l'] + ((structure['length']-1)/2) # jeśli pętla niesymetryczna koniec to (długość-1)/2
 
-                if structure['assymetry'] == 'left': # branie pod uwagę asymetryczności pętli - jeden z końców jest dłuższy niż drugi
-                    structure['end_l'] += 1 # ASYMETRIA MOŻE BYĆ > 1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            if structure['type'] == 'loop': # długość spinki jest liczona "podwójnie" dlatego konieczna jest pętla do poprawy tego
+                if structure['assymetry_l'] == 0 and structure['assymetry_r'] == 0:
+                    structure['end_l'] = structure['start_l'] + (structure['length']/2) # jeśli pętla symetryczna koniec z każdej strony to długośc/2
+                elif structure['assymetry_l'] != 0:
+                    structure['end_l'] = structure['start_l'] + (structure['length']-((structure['length']- structure['assymetry_l'])/2)) # jeśli pętla symetryczna koniec to długośc/2
+                elif structure['assymetry_r'] != 0:
+                    structure['end_l'] = structure['start_l'] + ((structure['length']- structure['assymetry_l'])/2)
             else:
                 structure['end_l'] = structure['start_l'] + structure['length']
                 # dopisanie do kazdego słownika (spinki/pętli/pnia/bulge) indeks zakończenia struktury po lewej stronie
@@ -219,14 +217,14 @@ for k in range(len(linear_1st_structures_list)):
             # sekwencje lewe były indeksowane na odwróconym stringu, dlatego od jego dł odejmuje się indeks
 
         if "start_r" in structure.keys(): # analogiczna pętla dla części prawych
-            if structure['type'] == 'loop':
-                if structure['length'] % 2 == 0:
-                    structure['end_r'] = structure['start_r'] + (structure['length']/2)
-                elif structure['length'] % 2 == 1:
-                    structure['end_r'] = structure['start_r'] + ((structure['length']-1)/2)
 
-                if structure['assymetry'] == 'right':
-                    structure['end_r'] += 1
+            if structure['type'] == 'loop':
+                if structure['assymetry_l'] == 0 and structure['assymetry_r'] == 0:
+                    structure['end_r'] = structure['start_r'] + (structure['length']/2)
+                elif structure['assymetry_r'] != 0:
+                    structure['end_r'] = structure['start_r'] + (structure['length']-((structure['length']- structure['assymetry_l'])/2))
+                elif structure['assymetry_l'] != 0:
+                    structure['end_r'] = structure['start_r'] + ((structure['length']- structure['assymetry_l'])/2)
             else:
                 structure['end_r'] = structure['start_r'] + structure['length']
 
@@ -253,17 +251,22 @@ print(linear_1st_structures_names)
 
 print(dot_bracket_seq)
 
+
 dot_bracket_seq_2nd = ""
 
-for p in range(len(linear_1st_structures_names)):
-    if p == 0:
-        dot_bracket_seq_2nd += dot_bracket_seq[:linear_1st_structures_names[p]["start"]] + linear_1st_structures_names[p]["name"] + dot_bracket_seq[linear_1st_structures_names[p]["end"]:linear_1st_structures_names[p+1]["start"]]
+if len(linear_1st_structures_names) == 1:
+    dot_bracket_seq_2nd += dot_bracket_seq[:linear_1st_structures_names[p]["start"]] + linear_1st_structures_names[p]["name"] + dot_bracket_seq[linear_1st_structures_names[p]["end"]:]
+    # jeśli tylko 1 struktura liniowa, nowa sekwencja do początku do startu struktury i od końca struktury do końca sekwencji
+else:
+    for p in range(len(linear_1st_structures_names)):
+        if p == 0:
+            dot_bracket_seq_2nd += dot_bracket_seq[:linear_1st_structures_names[p]["start"]] + linear_1st_structures_names[p]["name"] + dot_bracket_seq[linear_1st_structures_names[p]["end"]:linear_1st_structures_names[p+1]["start"]]
 
-    if p != 0 and p != (len(linear_1st_structures_names)-1):
-        dot_bracket_seq_2nd += linear_1st_structures_names[p]["name"] + dot_bracket_seq[linear_1st_structures_names[p]["end"]:linear_1st_structures_names[p+1]["start"]]
+        if p != 0 and p != (len(linear_1st_structures_names)-1):
+            dot_bracket_seq_2nd += linear_1st_structures_names[p]["name"] + dot_bracket_seq[linear_1st_structures_names[p]["end"]:linear_1st_structures_names[p+1]["start"]]
 
-    if p == (len(linear_1st_structures_names)-1):
-        dot_bracket_seq_2nd += linear_1st_structures_names[p]["name"] + dot_bracket_seq[linear_1st_structures_names[p]["end"]:]
+        if p == (len(linear_1st_structures_names)-1):
+            dot_bracket_seq_2nd += linear_1st_structures_names[p]["name"] + dot_bracket_seq[linear_1st_structures_names[p]["end"]:]
 
 # zapisanie nowej wersji oryginalnej sekwencji, gdzie struktury liniowe zostaną zastąpione ich nazwami
 # początek sekwencji do startu 1szej (indeks 0) struktury liniowej, nazwa struktury, zakres od jej końca do kolejnej,
@@ -273,29 +276,46 @@ for p in range(len(linear_1st_structures_names)):
 print("Nowa wersja oryginalnej sekwencji:", dot_bracket_seq_2nd)
 
 ###########################################################
-
+# ODNAJDYWANIE SKRZYŻOWAŃ TODO
 # odnajdywanie skrzyżowań - kropki między strukturami liniowymi
-crossroad_pat = "\.*" # wyrażenie regularne odnajdujące skrzyżowanie - kropki pomiędzy strukturami liniowymi
-crossroad_pattern = re.compile(crossroad_pat) # kompilacja wyrażenia regularnego
+# junction_1_list = []
+#
+# junction_pat = "\.*" # wyrażenie regularne odnajdujące skrzyżowanie - kropki pomiędzy strukturami liniowymi
+# junction_pattern = re.compile(junction_pat) # kompilacja wyrażenia regularnego
+#
+# for junct in junction_pattern.finditer
+#
+# for linear_structure in linear_1st_structures_names:
+#     for p in range(len(linear_1st_structures_names)):
+#         kk
+#
+#
+# junction_check = 0
+# for sign in range(linear_structure[p]["end"], linear_structure[p+1]["start"]):
+#     if sign == ".":
+#         junction_check = 1
+#     else:
+#         break
+# if junction_check == 1:
+#     junction_1_list.append({"name": "S"+str(p), "start": 0, "end": 0, "content": 0 })
 
-#for linear_structure in linear_1st_structures_names:
 
 
-
+# for structures in costam, sprawdzam kazda z kolejna
+#czy od konca 1 do pocz 2 sa same kropki jesli tak to spr 1 z 2 2 z 3 itd
 
 
 #########################################################
-# CO JEŚLI ASYMETRIA PĘTLI JEST > 1 ??
-# wszystkie nowe struktury połączone tylko kropkami zapisujemy jako skrzyzowanie wraz z jego długością (wszystkie kropki po prawej i lewej aż do najbliższego nawiasu
-# powtórzeni funkcji find_slb traktując (skrzyżowanie) jako spinkę do włosów
-# inne skrzyżowania znalezione w tym czasie traktowane sa jako kolejna struktura liniowa B0 B1 itd
-# znowu rozbudowa algorytmu jak wcześniej aż do momentu kiedy będą tylko ... na końcach
+# wszystkie nowe struktury połączone tylko kropkami zapisujemy jako skrzyzowanie wraz z jego długością (wszystkie kropki po prawej i lewej aż do najbliższego nawiasu TODO
+# powtórzeni funkcji find_slb traktując (skrzyżowanie) jako spinkę do włosów TODO
+# inne skrzyżowania znalezione w tym czasie traktowane sa jako kolejna struktura liniowa B0 B1 itd TODO
+# znowu rozbudowa algorytmu jak wcześniej aż do momentu kiedy będą tylko ... na końcach TODO
 
 
-# usuwanie już na początku znaków pseudowęzłów
-# odszukiwanie indeksów pseudowęzłów i przypisywanie ich do konkretnych struktur
+# usuwanie już na początku znaków pseudowęzłów TODO
+# odszukiwanie indeksów pseudowęzłów i przypisywanie ich do konkretnych struktur TODO
 
-# deal with igraph
+# deal with igraph TODO
 
 
 
@@ -334,7 +354,9 @@ crossroad_pattern = re.compile(crossroad_pat) # kompilacja wyrażenia regularneg
 #     pustalista.append("A"+str(f))
 # print("Test", pustalista)
 
-# listka = [0,1]
+# listka = [0]
+# print(len(listka))
 # for p in range(len(listka)):
 #     print(p)
 # print(len(listka)-1)
+
