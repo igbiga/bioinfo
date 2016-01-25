@@ -2,7 +2,7 @@
 # zamiana struktury 2nd RNA zapisane w formacie dot-bracket na graf przedstawiający rozmieszczenie poszczególnych struktur
 
 import re
-in_file = open("C:/Users/Igusia/Documents/example2.txt")
+in_file = open("C:/Users/Igusia/Documents/example_jun_multi.txt")
 in_file2 = in_file.read().replace("\n", "")
 input_file = str(in_file2)
 #print("Plik wejsciowy: \n", input_file)
@@ -35,34 +35,25 @@ print("Sekwencja w formacie dot-bracket: \n", dot_bracket_seq)
 hairpin_pat = "\(\.*\)" # wyrazenie regularne znajdujace spinki (dowolna ilość "." zakończona "(" z lewej i ")" z prawej strony)
 hairpin_pattern = re.compile(hairpin_pat) # kompilacja wyrażenia regularnego
 
-hairpins = []
-for m in hairpin_pattern.finditer(dot_bracket_seq): # pętla dla każdego patternu wyszukanego w sekwencji
-    hairpins.append({'type': 'hairpin', 'start': m.start() + 1, 'end': m.end() - 1, 'length': m.end() - m.start()})
-print("Znalezione struktury spinek:\n", hairpins)
-# stworzenie listy słowników z których każdy będzie zawierał inf o kolejnych spinkach: rozpoczęcie, zakończenie i długość
-
-########
-
 structures = []
-for n in range(len(hairpins)):
-    structures.append([])
-    #structures[n].append("L"+ n)
-    structures[n].append(hairpins[n])
-print(structures) # lista z poszczególnymi strukturami liniowymi.
-# każda str jest zapisana w osobnej liście skł się ze słowników z informacjami
+for m in hairpin_pattern.finditer(dot_bracket_seq): # pętla dla każdego patternu wyszukanego w sekwencji
+    structures.append([{'type': 'hairpin', 'start': m.start() + 1, 'end': m.end() - 1, 'length': m.end() - m.start()}])
+print("Znalezione struktury spinek:\n", structures)
+# lista z poszczególnymi strukturami liniowymi.
+# każda str jest zapisana w osobnej liście skł się ze słowników z informacjami - na razie są tam inf o znalezionej spince
 # o jej składnikach tj spinkach/pniach/pętlach/bulge, miejscach ich rozpoczecia i zakończenia w str i długości
 
 #######
 
-# wyszukiwanie pnia/bulge/pętli wew
+# zapisywanie sekwencji na prawo i na lewo od każdej spinki
 
 left_hairpin_side = []
 right_hairpin_side = []
-for n in range(0, len(hairpins)):
-    print("Spinka ",n, ":", hairpins[n])
-    left_side = dot_bracket_seq[0: hairpins[n]['start']]
+for n in range(0, len(structures)):
+    print("Spinka ",n, ":", structures[n][0])
+    left_side = dot_bracket_seq[0: structures[n][0]['start']]
     left_hairpin_side.append(left_side) # lista sekwencji po lewej stronie każdej ze znalezionch spinek
-    right_side = dot_bracket_seq[hairpins[n]['end']: -1]
+    right_side = dot_bracket_seq[structures[n][0]['end']: -1]
     right_hairpin_side.append(right_side) # analogiczna lista z sekwencjami na prawo od spinek
 # dla każdej znalezionej spinki wypisanie fragmentu sekwencji po jej lewej oraz prawej stronie
 # bez uwzględnienia znaków wchodzących w skłąd spinki
@@ -251,7 +242,8 @@ print(linear_1st_structures_names)
 
 print(dot_bracket_seq)
 
-
+#############################################
+# wizualizacja - zamiana odpowiednich znakow na nazwy struktur liniowych
 dot_bracket_seq_2nd = ""
 
 if len(linear_1st_structures_names) == 1:
@@ -260,7 +252,8 @@ if len(linear_1st_structures_names) == 1:
 else:
     for p in range(len(linear_1st_structures_names)):
         if p == 0:
-            dot_bracket_seq_2nd += dot_bracket_seq[:linear_1st_structures_names[p]["start"]] + linear_1st_structures_names[p]["name"] + dot_bracket_seq[linear_1st_structures_names[p]["end"]:linear_1st_structures_names[p+1]["start"]]
+            dot_bracket_seq_2nd += dot_bracket_seq[:linear_1st_structures_names[p]["start"]] + linear_1st_structures_names[p]["name"] + \
+                                   dot_bracket_seq[linear_1st_structures_names[p]["end"]:linear_1st_structures_names[p+1]["start"]]
 
         if p != 0 and p != (len(linear_1st_structures_names)-1):
             dot_bracket_seq_2nd += linear_1st_structures_names[p]["name"] + dot_bracket_seq[linear_1st_structures_names[p]["end"]:linear_1st_structures_names[p+1]["start"]]
@@ -276,41 +269,127 @@ else:
 print("Nowa wersja oryginalnej sekwencji:", dot_bracket_seq_2nd)
 
 ###########################################################
-# ODNAJDYWANIE SKRZYŻOWAŃ TODO
+
 # odnajdywanie skrzyżowań - kropki między strukturami liniowymi
-# junction_1_list = []
-#
-# junction_pat = "\.*" # wyrażenie regularne odnajdujące skrzyżowanie - kropki pomiędzy strukturami liniowymi
-# junction_pattern = re.compile(junction_pat) # kompilacja wyrażenia regularnego
-#
-# for junct in junction_pattern.finditer
-#
-# for linear_structure in linear_1st_structures_names:
-#     for p in range(len(linear_1st_structures_names)):
-#         kk
-#
-#
-# junction_check = 0
-# for sign in range(linear_structure[p]["end"], linear_structure[p+1]["start"]):
-#     if sign == ".":
-#         junction_check = 1
-#     else:
-#         break
-# if junction_check == 1:
-#     junction_1_list.append({"name": "S"+str(p), "start": 0, "end": 0, "content": 0 })
+
+# znajdywanie znaków mdz strukturami
+
+if len(linear_1st_structures_names) > 1: # ponieważ nie można wtedy znaleźć znaków pomiędzy
+    junction_1_list = [] # tu będą zapisywane poszczególne skrzyżowania
+    junction_in_progress = 0 # zmienna potrzebna do zaznaczenia wejścia do pętli
+
+    for p in range(len(linear_1st_structures_names)-1): # porównanie każdej struktury z kolejną
+        print("to jest p", p)
+
+        if linear_1st_structures_names[p]['end'] != linear_1st_structures_names[p+1]['start']: # gdy struktury są przedzielone jakimiś znakami
+            print("znaki mdz strukturami")
+
+            for sign in dot_bracket_seq[linear_1st_structures_names[p]['end']: linear_1st_structures_names[p+1]['start']]: # porównanie znaków mdz każdą str liniowa a kolejną
+                print("to te znaki pomiędzy!", dot_bracket_seq[linear_1st_structures_names[p]['end']: linear_1st_structures_names[p+1]['start']])
+                print(junction_in_progress)
+
+                if sign == ".":
+                    print("tu jest kropka")
+
+                    if junction_in_progress == 0: # przy wejściu do pętli dodawana jest nowa lista ze słownikiem ozn skrzyżowanie wraz z inf o długości i zawartości (nazwy str liniowych)
+
+                        if junction_1_list == []: # jeśli jest to 1sza iteracja i jeszcze nie dodano elementów do listy
+                            junction_1_list.append([{'name': 'J'+str(p), 'start': 0, 'end': 0, 'type':'junction', 'length': 1, 'content':[linear_1st_structures_names[p], linear_1st_structures_names[p+1]]}])
+
+                        else:
+                            if junction_1_list[-1][0]['type'] != 'junction': # jeśli dana struktura nie jest już zapisana w poprzednim skrzyżowaniu
+                                junction_1_list.append([{'name': 'J'+str(p),'start': 0, 'end': 0, 'type':'junction', 'length': 1, 'content':[linear_1st_structures_names[p], linear_1st_structures_names[p+1]]}])
+                                # utworzenie nowej listy zaw slownik ze skrzyżowaniem i inf o nim
+
+                            elif junction_1_list[-1][0]['type'] == 'junction': # jeśli dana struktura jest już zapisana w poprzednim skrzyżowaniu
+                                junction_1_list[-1][0]['length'] += 1 # jesli mdz str p(już zapisaną) a p+1 są same kropki - dodawane sa one do dł skrzyżowania
+                                junction_1_list[-1][0]['content'].append(linear_1st_structures_names[p+1]) # jesli mdz str p(już zapisaną) a p+1 są same kropki - dopisywana jest ona do zaw
+                        junction_in_progress = 1
+
+                    elif junction_in_progress == 1:
+                        junction_1_list[-1][0]['length'] += 1
+
+                else:
+                    print("tu jest nawias")
+                    if junction_1_list == []: # jeśli jest to 1sza iteracja i jeszcze nie dodano elementów do listy a 1 struktura nie tworzy skrzyżowania
+                        junction_1_list.append([linear_1st_structures_names[p]])
+
+                    else:
+                        if junction_1_list[-1][0]['type'] != 'junction': # jeśli dana struktura nie jest już zapisana w poprzednim skrzyżowaniu
+                            junction_1_list.append([linear_1st_structures_names[p]])
+
+                        elif junction_1_list[-1][0]['type'] == 'junction': # jeśli dana struktura jest już zapisana w poprzednim skrzyżowaniu
+                            junction_1_list.append(linear_1st_structures_names[p+1])
+
+                    break # jeśli między strukturami choć 1 znak inny niż "." to nie należą one do tego samego skrzyżowania
+                print(junction_1_list)
+
+        else:
+            print("brak znakow mdz strukturami")
+            if junction_1_list == []: # jeśli jest to 1sza iteracja i jeszcze nie dodano elementów do listy
+                junction_1_list.append([{'name': 'J'+str(p),'type':'junction', 'start': 0, 'end': 0, 'length': 0, 'content':[linear_1st_structures_names[p], linear_1st_structures_names[p+1]]}])
+
+            else:
+                if junction_1_list[-1][0]['type'] != 'junction':
+                    junction_1_list.append([{'name': 'J'+str(p),'type':'junction', 'start': 0, 'end': 0, 'length': 0, 'content':[linear_1st_structures_names[p], linear_1st_structures_names[p+1]]}])
+
+                elif junction_1_list[-1][0]['type'] == 'junction':
+                    junction_1_list[-1][0]['content'].append(linear_1st_structures_names[p+1])
+
+            print(junction_1_list) # jesli mdz strukturami nie ma znaków, dodawane są one do skrzyżowania, jednak bez zwiększenia jego długości
+
+print("i ostatecznie:", junction_1_list)
 
 
 
-# for structures in costam, sprawdzam kazda z kolejna
-#czy od konca 1 do pocz 2 sa same kropki jesli tak to spr 1 z 2 2 z 3 itd
+##################################
+
+# dodawanie do skrzyżowania kropek znajdujących się po prawej i lewej stronie
+# BYĆ MOŻE MOGĄ BYĆ TEŻ KROPKI BEZPOŚREDNIO PRZYLEGAJĄCE DO SKRZYŻOWANIA
+# ALE NALEŻĄCE DO JAKIEJŚ INNEJ STRUKTURY - TRZEBA TO SPRAWDZIĆ TODO
+for p in range(len(junction_1_list)):
+    if junction_1_list[p][0]['type'] == 'junction':
+        junction_1_list[p][0]['start'] = junction_1_list[p][0]['content'][0]['start']
+        junction_1_list[p][0]['end'] = junction_1_list[p][0]['content'][-1]['end']
+        print("dodane start i end:", junction_1_list)
+
+        left_junction_side = dot_bracket_seq[:junction_1_list[p][0]['start']]
+        rev_left_junction_side = left_junction_side[::-1]
+        right_junction_side = dot_bracket_seq[junction_1_list[p][0]['end']:]
+        print("lewa:", left_junction_side)
+        print("lewa odwrócona:", rev_left_junction_side)
+        print("prawa:", right_junction_side)
+
+        for i in range (len(rev_left_junction_side)):
+            if rev_left_junction_side[i] == ".":
+                print("to jest i:")
+                junction_1_list[p][0]['length'] += 1
+                junction_1_list[p][0]['start'] -= 1
+                print("no i dodajemy z lewej")
+
+            else:
+                print("i koniec z lewej")
+                break
+
+        for j in range (len(right_junction_side)):
+            if right_junction_side[j] == ".":
+               junction_1_list[p][0]['length'] += 1
+               junction_1_list[p][0]['end'] += 1
+               print("no i dodajemy z prawej")
+            else:
+                print("i koniec z lewej")
+                break
+
+print("i po dodaniu kropek obok:", junction_1_list)
 
 
 #########################################################
-# wszystkie nowe struktury połączone tylko kropkami zapisujemy jako skrzyzowanie wraz z jego długością (wszystkie kropki po prawej i lewej aż do najbliższego nawiasu TODO
-# powtórzeni funkcji find_slb traktując (skrzyżowanie) jako spinkę do włosów TODO
-# inne skrzyżowania znalezione w tym czasie traktowane sa jako kolejna struktura liniowa B0 B1 itd TODO
-# znowu rozbudowa algorytmu jak wcześniej aż do momentu kiedy będą tylko ... na końcach TODO
+# zapisanie wszystkich dotychczasowych rzeczy jako funkcji # TODO
+# zrobienie dużej pętli z funkcjami pracującej aż do końca # TODO
+# odpowiednie zakończenie pętli # TODO
 
+
+# na początku usuwanie kropek - struktur 1niciowych
 
 # usuwanie już na początku znaków pseudowęzłów TODO
 # odszukiwanie indeksów pseudowęzłów i przypisywanie ich do konkretnych struktur TODO
