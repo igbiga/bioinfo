@@ -2,7 +2,7 @@
 # zamiana struktury 2nd RNA zapisane w formacie dot-bracket na graf przedstawiający rozmieszczenie poszczególnych struktur
 
 import re
-in_file = open("C:/Users/Igusia/Documents/example_complicated.txt")
+in_file = open("C:/Users/Igusia/Documents/example_mega.txt")
 in_file2 = in_file.read().replace("\n", "")
 input_file = str(in_file2)
 #print("Plik wejsciowy: \n", input_file)
@@ -271,151 +271,148 @@ print("Struktury liniowe jako nazwy i ich zakresy:", linear_structures_names)
 print()
 
 #############################################
-# wizualizacja - zamiana odpowiednich znakow na nazwy struktur liniowych
+
 
 def linear_structures_visualization(input_seq, linear_structures_names): # wizualizuje w jakich miejscach oryginalnej sekwencji znajdują się nazwy str liniowych
-    dot_bracket_seq_2nd = ""
+    dot_bracket_seq_2 = ""
 
     for p in range(len(linear_structures_names)):
         if len(linear_structures_names) == 1:
-            dot_bracket_seq_2nd += input_seq[:linear_structures_names[p]["start"]] + linear_structures_names[p]["name"] + input_seq[linear_structures_names[p]["end"]:]
+            dot_bracket_seq_2 += input_seq[:linear_structures_names[p]["start"]] + linear_structures_names[p]["name"] + input_seq[linear_structures_names[p]["end"]:]
             # jeśli tylko 1 struktura liniowa, nowa sekwencja do początku do startu struktury i od końca struktury do końca sekwencji
         else:
             if p == 0:
-                dot_bracket_seq_2nd += input_seq[:linear_structures_names[p]["start"]] + linear_structures_names[p]["name"] + \
+                dot_bracket_seq_2 += input_seq[:linear_structures_names[p]["start"]] + linear_structures_names[p]["name"] + \
                                        input_seq[linear_structures_names[p]["end"]:linear_structures_names[p+1]["start"]]
 
             if p != 0 and p != (len(linear_structures_names)-1):
-                dot_bracket_seq_2nd += linear_structures_names[p]["name"] + input_seq[linear_structures_names[p]["end"]:linear_structures_names[p+1]["start"]]
+                dot_bracket_seq_2 += linear_structures_names[p]["name"] + input_seq[linear_structures_names[p]["end"]:linear_structures_names[p+1]["start"]]
 
             if p == (len(linear_structures_names)-1):
-                dot_bracket_seq_2nd += linear_structures_names[p]["name"] + input_seq[linear_structures_names[p]["end"]:]
+                dot_bracket_seq_2 += linear_structures_names[p]["name"] + input_seq[linear_structures_names[p]["end"]:]
                 # początek sekwencji do startu 1szej (indeks 0) struktury liniowej, nazwa struktury, zakres od jej końca do kolejnej
                 # (razy l struktur) i zakres do końca sekwencji
-    return dot_bracket_seq_2nd
+    return dot_bracket_seq_2
 
 
 input_sequence_2nd = linear_structures_visualization(input_sequence, linear_structures_names)
 
-print("Nowa wersja oryginalnej sekwencji:", input_sequence_2nd)
+print("Wizualizacja struktur liniowych:", input_sequence_2nd)
 
 ###########################################################
+# NAZWY SKRZYŻOWAN PO KOLEI... TODO
 
-# odnajdywanie skrzyżowań - kropki między strukturami liniowymi
+def junction_find(input_sequence, linear_structure_names): # odnajduje struktury liniowe połączone bezpośrednio lub "." - będące w 1 skrzyżowaniu
+    junction_list = [] # tu będą zapisywane poszczególne skrzyżowania
 
-# znajdywanie znaków mdz strukturami
-# TO NIE DZIAŁA DLA B SKOMPLIKOWANYCH TODO
+    if len(linear_structures_names) > 1: # ponieważ nie można wtedy porównać kolejnych struktur linowych
+        for p in range(len(linear_structures_names)-1): # porównanie każdej struktury z kolejną aż do przedostatniej
+            if linear_structures_names[p]['end'] != linear_structures_names[p+1]['start']: # gdy struktury są przedzielone jakimiś znakami
 
-if len(linear_structures_names) > 1: # ponieważ nie można wtedy znaleźć znaków pomiędzy
-    junction_1_list = [] # tu będą zapisywane poszczególne skrzyżowania
-    junction_in_progress = 0 # zmienna potrzebna do zaznaczenia wejścia do pętli
+                if all(sign == "." for sign in input_sequence[linear_structures_names[p]['end']: linear_structures_names[p+1]['start']] ) == True:
+                    # kiedy wszystkie znaki pomiędzy strukturami są kropkami
 
-    for p in range(len(linear_structures_names)-1): # porównanie każdej struktury z kolejną
-        print("to jest p", p)
-
-        if linear_structures_names[p]['end'] != linear_structures_names[p+1]['start']: # gdy struktury są przedzielone jakimiś znakami
-            print("znaki mdz strukturami")
-
-            for sign in dot_bracket_seq[linear_structures_names[p]['end']: linear_structures_names[p+1]['start']]: # porównanie znaków mdz każdą str liniowa a kolejną
-                print("To zakres pomiędzy:", linear_structures_names[p]['end'], ":", linear_structures_names[p+1]['start'] )
-                print("to te znaki pomiędzy!", dot_bracket_seq[(linear_structures_names[p]['end']): (linear_structures_names[p+1]['start'])]) # TO JEST ZŁY ZNAK TODO
-                print(junction_in_progress)
-
-                if sign == ".":
-                    print("tu jest kropka")
-
-                    if junction_in_progress == 0: # przy wejściu do pętli dodawana jest nowa lista ze słownikiem ozn skrzyżowanie wraz z inf o długości i zawartości (nazwy str liniowych)
-
-                        if junction_1_list == []: # jeśli jest to 1sza iteracja i jeszcze nie dodano elementów do listy
-                            junction_1_list.append([{'name': 'J'+str(p), 'start': 0, 'end': 0, 'type':'junction', 'length': 1, 'content':[linear_structures_names[p], linear_structures_names[p+1]]}])
-
-                        else:
-                            if junction_1_list[-1][0]['type'] != 'junction': # jeśli dana struktura nie jest już zapisana w poprzednim skrzyżowaniu
-                                junction_1_list.append([{'name': 'J'+str(p),'start': 0, 'end': 0, 'type':'junction', 'length': 1, 'content':[linear_structures_names[p], linear_structures_names[p+1]]}])
-                                # utworzenie nowej listy zaw slownik ze skrzyżowaniem i inf o nim
-
-                            elif junction_1_list[-1][0]['type'] == 'junction': # jeśli dana struktura jest już zapisana w poprzednim skrzyżowaniu
-                                junction_1_list[-1][0]['length'] += 1 # jesli mdz str p(już zapisaną) a p+1 są same kropki - dodawane sa one do dł skrzyżowania
-                                junction_1_list[-1][0]['content'].append(linear_structures_names[p+1]) # jesli mdz str p(już zapisaną) a p+1 są same kropki - dopisywana jest ona do zaw
-                        junction_in_progress = 1
-
-                    elif junction_in_progress == 1:
-                        junction_1_list[-1][0]['length'] += 1
-
-                else:
-                    print("tu jest nawias")
-                    if junction_1_list == []: # jeśli jest to 1sza iteracja i jeszcze nie dodano elementów do listy a 1 struktura nie tworzy skrzyżowania
-                        junction_1_list.append([linear_structures_names[p]])
-
+                    if junction_list == []:
+                        junction_list.append([{'name': 'J'+str(p), 'start': 0, 'end': 0, 'type':'junction',
+                                                 'length': (linear_structures_names[p+1]['start'] - linear_structures_names[p]['end']) ,
+                                                 'content':[linear_structures_names[p], linear_structures_names[p+1]]}])
+                        # jeśli jest to 1sza iteracja i jeszcze nie dodano elementów do listy a pierwsze 2 struktury tworzą skrzyżowanie
+                        # dodawana jest lista ze słownikiem z nowym skrzyżowaniem zaw struktury p i p+1
                     else:
-                        if junction_1_list[-1][0]['type'] != 'junction': # jeśli dana struktura nie jest już zapisana w poprzednim skrzyżowaniu # A TU WYSKAKUJE BŁĄD TODO
-                            junction_1_list.append([linear_structures_names[p]])
+                        junction_list[-1][0]['content'].append(linear_structures_names[p+1])
+                        junction_list[-1][0]['length'] += (linear_structures_names[p+1]['start'] - linear_structures_names[p]['end'])
+                        # jeśli kolejna znaleziona str należy do skrzyzowania dopisywana jest do poprzedniego wraz z ilością kropek pomiędzy
 
-                        elif junction_1_list[-1][0]['type'] == 'junction': # jeśli dana struktura jest już zapisana w poprzednim skrzyżowaniu
-                            junction_1_list.append(linear_structures_names[p+1])
+                else: # kiedy między strukturami jest min i ")" lub ")" - struktury p i p+1 nie sa w 1 skrzyżowaniu
+                    if junction_list == []:
+                        junction_list.append([{'name': 'J'+str(p), 'start': 0, 'end': 0, 'type':'junction',
+                                                 'length': 0, 'content':[linear_structures_names[p]]}])
+                        junction_list.append([{'name': 'J'+str(p+1), 'start': 0, 'end': 0, 'type':'junction',
+                                                 'length': 0, 'content':[linear_structures_names[p+1]]}])
+                        # jeśli jest to 1sza iteracja i jeszcze nie dodano elementów do listy a pierwsze 2 struktury nie są w 1 skrzyżowaniu
+                        # dodawane są 2 nowe listy ze słownikami ze skrzyżowaniami zawierającymi 1) - strukturę p i 2) - strukturę p+1
+                    else:
+                        junction_list.append([{'name': 'J'+str(p+1), 'start': 0, 'end': 0, 'type':'junction',
+                                                 'length': 0, 'content':[linear_structures_names[p+1]]}])
+                        # jeśli kolejna str nie należy do poprzedniego skrzyżowania zapisywana jest jako nowe zaw str p+1
 
-                    break # jeśli między strukturami choć 1 znak inny niż "." to nie należą one do tego samego skrzyżowania
-                print(junction_1_list)
+            else: # jeśli mdz strukturami nie ma żadnego znaku - należą one do 1 skrzyżowania
+                if junction_list == []:
+                    junction_list.append([{'name': 'J'+str(p), 'start': 0, 'end': 0, 'type':'junction',
+                                             'length': 0, 'content':[linear_structures_names[p], linear_structures_names[p+1]]}])
+                else:
+                    junction_list[-1][0]['content'].append(linear_structures_names[p+1])
+                   # jak w pętli dla znalezienia ".", poza dodawaniem długości
+    else:
+        for k in range(len(linear_structures_names)):
+            junction_list.append([{'name': 'J'+str(k), 'start': 0, 'end': 0, 'type':'junction',
+                                     'length': 0, 'content':[linear_structures_names[k]]}])
+    return junction_list
 
-        else:
-            print("brak znakow mdz strukturami")
-            if junction_1_list == []: # jeśli jest to 1sza iteracja i jeszcze nie dodano elementów do listy
-                junction_1_list.append([{'name': 'J'+str(p),'type':'junction', 'start': 0, 'end': 0, 'length': 0, 'content':[linear_structures_names[p], linear_structures_names[p+1]]}])
 
+junction_list = junction_find(input_sequence, linear_structures_names)
+
+##################################
+
+
+def junction_elongation(input_sequence, junction_list): # dodaje do skrzyżowania kropki znajdujące się po prawej i lewej stronie
+    for p in range(len(junction_list)):
+        junction_list[p][0]['start'] = junction_list[p][0]['content'][0]['start'] # początek skrzyżowania to początek jego 1szej struktury liniowej
+        junction_list[p][0]['end'] = junction_list[p][0]['content'][-1]['end'] # koniec skrzyżowania to koniec jego ostatniej struktury liniowej
+
+        left_junction_side = input_sequence[:junction_list[p][0]['start']] # sekwencja po lewej stronie od skrzyżowania
+        rev_left_junction_side = left_junction_side[::-1] # odwrócona "lewa" sekwencja - aby łatwiejsza była iteracja
+        right_junction_side = input_sequence[junction_list[p][0]['end']:] # sekwencja po prawej stronie od skrzyżowania
+
+        for i in range (len(rev_left_junction_side)):
+            if rev_left_junction_side[i] == ".": # jeśli znak po lewej stronie od skrzyżowania to "."
+                junction_list[p][0]['length'] += 1 # dodawane jest +1 do długości skrzyżowania
+                junction_list[p][0]['start'] -= 1 # początek skrzyżowania jest przesuwany o 1 w lewą stronę
+
+            else: # jeśli funkcja napotka na nawias - koniec skrzyżowania
+                break
+
+        for j in range (len(right_junction_side)): # analogiczna pętla dla prawej strony od skrzyżowania
+            if right_junction_side[j] == ".":
+               junction_list[p][0]['length'] += 1
+               junction_list[p][0]['end'] += 1
             else:
-                if junction_1_list[-1][0]['type'] != 'junction':
-                    junction_1_list.append([{'name': 'J'+str(p),'type':'junction', 'start': 0, 'end': 0, 'length': 0, 'content':[linear_structures_names[p], linear_structures_names[p+1]]}])
+                break
+    return junction_list
 
-                elif junction_1_list[-1][0]['type'] == 'junction':
-                    junction_1_list[-1][0]['content'].append(linear_structures_names[p+1])
+junction_1_list = junction_elongation(input_sequence, junction_list)
+print("Odnalezione skrzyżowania:", junction_1_list)
+print("Jest ich", len(junction_1_list))
+print()
 
-            print(junction_1_list) # jesli mdz strukturami nie ma znaków, dodawane są one do skrzyżowania, jednak bez zwiększenia jego długości
+#########################################################################
+# wizualizacja skrzyżowań
 
-print("i ostatecznie:", junction_1_list)
+def junction_visualization(input_seq, junction_list): # wizualizuje w jakich miejscach oryginalnej sekwencji znajdują się nazwy str liniowych
+    dot_bracket_seq_3 = ""
 
+    for p in range(len(junction_list)):
+        if len(junction_list) == 1:
+            dot_bracket_seq_3 += input_seq[:junction_list[p][0]["start"]] + junction_list[p][0]["name"] + input_seq[junction_list[p][0]["end"]:]
+            # jeśli tylko 1 skrzyżowanie, nowa sekwencja do początku do startu skrzyżowania i od końca skrzyżowania do końca sekwencji
+        else:
+            if p == 0:
+                dot_bracket_seq_3 += input_seq[:junction_list[p][0]["start"]] + junction_list[p][0]["name"] + \
+                                       input_seq[junction_list[p][0]["end"]:junction_list[p+1][0]["start"]]
 
+            if p != 0 and p != (len(junction_list)-1):
+                dot_bracket_seq_3 += junction_list[p][0]["name"] + input_seq[junction_list[p][0]["end"]:junction_list[p+1][0]["start"]]
 
-# ##################################
-#
-# # dodawanie do skrzyżowania kropek znajdujących się po prawej i lewej stronie
-# # BYĆ MOŻE MOGĄ BYĆ TEŻ KROPKI BEZPOŚREDNIO PRZYLEGAJĄCE DO SKRZYŻOWANIA
-# # ALE NALEŻĄCE DO JAKIEJŚ INNEJ STRUKTURY - TRZEBA TO SPRAWDZIĆ TODO
-# for p in range(len(junction_1_list)):
-#     if junction_1_list[p][0]['type'] == 'junction':
-#         junction_1_list[p][0]['start'] = junction_1_list[p][0]['content'][0]['start']
-#         junction_1_list[p][0]['end'] = junction_1_list[p][0]['content'][-1]['end']
-#         print("dodane start i end:", junction_1_list)
-#
-#         left_junction_side = dot_bracket_seq[:junction_1_list[p][0]['start']]
-#         rev_left_junction_side = left_junction_side[::-1]
-#         right_junction_side = dot_bracket_seq[junction_1_list[p][0]['end']:]
-#         print("lewa:", left_junction_side)
-#         print("lewa odwrócona:", rev_left_junction_side)
-#         print("prawa:", right_junction_side)
-#
-#         for i in range (len(rev_left_junction_side)):
-#             if rev_left_junction_side[i] == ".":
-#                 print("to jest i:")
-#                 junction_1_list[p][0]['length'] += 1
-#                 junction_1_list[p][0]['start'] -= 1
-#                 print("no i dodajemy z lewej")
-#
-#             else:
-#                 print("i koniec z lewej")
-#                 break
-#
-#         for j in range (len(right_junction_side)):
-#             if right_junction_side[j] == ".":
-#                junction_1_list[p][0]['length'] += 1
-#                junction_1_list[p][0]['end'] += 1
-#                print("no i dodajemy z prawej")
-#             else:
-#                 print("i koniec z lewej")
-#                 break
-#
-# print("i po dodaniu kropek obok:", junction_1_list)
+            if p == (len(junction_list)-1):
+                dot_bracket_seq_3 += junction_list[p][0]["name"] + input_seq[junction_list[p][0]["end"]:]
+                # początek sekwencji do startu 1szej (indeks 0) struktury liniowej, nazwa struktury, zakres od jej końca do kolejnej
+                # (razy liczba struktur) i zakres do końca sekwencji
+    return dot_bracket_seq_3
 
 
+input_sequence_3rd = junction_visualization(input_sequence, junction_1_list)
+
+print("Wizualizacja skrzyżowań:", input_sequence_3rd)
 #########################################################
 # zapisanie wszystkich dotychczasowych rzeczy jako funkcji # TODO
 # zrobienie dużej pętli z funkcjami pracującej aż do końca # TODO
@@ -468,4 +465,3 @@ print("i ostatecznie:", junction_1_list)
 # for p in range(len(listka)):
 #     print(p)
 # print(len(listka)-1)
-
