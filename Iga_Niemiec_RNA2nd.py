@@ -94,8 +94,7 @@ def left_and_right_structure_side(seq, structures_list): # wypisuje części sek
     # bez uwzględnienia znaków wchodzących w skłąd spinki
     # stworzenie list sekwencji "prawostronnych" oraz "lewostronnnych"
 
-left_structures_side = left_and_right_structure_side(input_sequence, hairpin_structures)[0]
-right_structures_side = left_and_right_structure_side(input_sequence, hairpin_structures)[1]
+left_structures_side, right_structures_side = left_and_right_structure_side(input_sequence, hairpin_structures)
 
 print("Lista sekwencji po lewej stronie struktur:", left_structures_side)
 print("Lista sekwencji po prawej stronie struktur:", right_structures_side)
@@ -283,25 +282,25 @@ print()
 
 
 def linear_structures_visualization(input_seq, linear_structures_names): # wizualizuje w jakich miejscach oryginalnej sekwencji znajdują się nazwy str liniowych
-    dot_bracket_seq_2 = ""
+    linear_str_vis = ""
 
     for p in range(len(linear_structures_names)):
         if len(linear_structures_names) == 1:
-            dot_bracket_seq_2 += input_seq[:linear_structures_names[p]["start"]] + linear_structures_names[p]["name"] + input_seq[linear_structures_names[p]["end"]:]
+            linear_str_vis += input_seq[:linear_structures_names[p]["start"]] + linear_structures_names[p]["name"] + input_seq[linear_structures_names[p]["end"]:]
             # jeśli tylko 1 struktura liniowa, nowa sekwencja do początku do startu struktury i od końca struktury do końca sekwencji
         else:
             if p == 0:
-                dot_bracket_seq_2 += input_seq[:linear_structures_names[p]["start"]] + linear_structures_names[p]["name"] + \
+                linear_str_vis += input_seq[:linear_structures_names[p]["start"]] + linear_structures_names[p]["name"] + \
                                        input_seq[linear_structures_names[p]["end"]:linear_structures_names[p+1]["start"]]
 
             if p != 0 and p != (len(linear_structures_names)-1):
-                dot_bracket_seq_2 += linear_structures_names[p]["name"] + input_seq[linear_structures_names[p]["end"]:linear_structures_names[p+1]["start"]]
+                linear_str_vis += linear_structures_names[p]["name"] + input_seq[linear_structures_names[p]["end"]:linear_structures_names[p+1]["start"]]
 
             if p == (len(linear_structures_names)-1):
-                dot_bracket_seq_2 += linear_structures_names[p]["name"] + input_seq[linear_structures_names[p]["end"]:]
+                linear_str_vis += linear_structures_names[p]["name"] + input_seq[linear_structures_names[p]["end"]:]
                 # początek sekwencji do startu 1szej (indeks 0) struktury liniowej, nazwa struktury, zakres od jej końca do kolejnej
                 # (razy l struktur) i zakres do końca sekwencji
-    return dot_bracket_seq_2
+    return linear_str_vis
 
 linear_structures_visual = linear_structures_visualization(input_sequence, linear_structures_names)
 
@@ -312,15 +311,13 @@ print("Wizualizacja struktur liniowych:", linear_structures_visual)
 def junction_find(input_sequence, linear_structures): # odnajduje struktury liniowe połączone bezpośrednio lub "." - będące w 1 skrzyżowaniu
     junction_list = [] # tu będą zapisywane poszczególne skrzyżowania
 
-    if len(linear_structures) > 1: # ponieważ nie można wtedy porównać kolejnych struktur linowych
+    if len(linear_structures) > 1: # ponieważ nie można wtedy porównać kolejnych struktur linowych a pojedyncze skrzyżowanie nie tworzy wyrzejrzędowych skrzyżowań
         for p in range(len(linear_structures)-1): # porównanie każdej struktury z kolejną aż do przedostatniej
 
             if linear_structures[p][-1]['end'] != linear_structures[p+1][-1]['start']: # gdy struktury są przedzielone jakimiś znakami TUTAJ -1 i -1
 
                 if all(sign == "." for sign in input_sequence[linear_structures[p][-1]['end']: linear_structures[p+1][-1]['start']] ) == True: #TUTAJ -1 i -1
-                    # kiedy wszystkie znaki pomiędzy strukturami są
-                    print("to jest p", p)
-                    print("znaki pomiędzy to kropki")
+                    # kiedy wszystkie znaki pomiędzy strukturami są kropkami
 
                     if junction_list == []:
                         junction_list.append([{'name': 'J'+str(p), 'start': 0, 'end': 0, 'type':'junction',
@@ -353,15 +350,13 @@ def junction_find(input_sequence, linear_structures): # odnajduje struktury lini
                 else:
                     junction_list[-1][0]['content'].append(linear_structures[p+1])
                    # jak w pętli dla znalezienia ".", poza dodawaniem długości
-    else:
-        for k in range(len(linear_structures)):
-            junction_list.append([{'name': 'J'+str(k), 'start': 0, 'end': 0, 'type':'junction',
-                                     'length': 0, 'content':[linear_structures[k]]}])
+
     return junction_list
 
 
 junctions = junction_find(input_sequence, linear_structures)
-print("TO są początki skrzyżowań)", junctions)
+
+print("To są początki skrzyżowań)", junctions)
 
 ##################################
 
@@ -391,6 +386,7 @@ def junction_elongation(input_sequence, junction_list): # dodaje do skrzyżowani
                 break
     return junction_list
 
+
 junctions = junction_elongation(input_sequence, junctions)
 print("Odnalezione skrzyżowania:", junctions)
 print("Jest ich", len(junctions))
@@ -400,71 +396,47 @@ print()
 # wizualizacja skrzyżowań
 
 def junction_visualization(input_seq, junction_list): # wizualizuje w jakich miejscach oryginalnej sekwencji znajdują się nazwy str liniowych
-    dot_bracket_seq_3 = ""
+    junction_vis = ""
 
     for p in range(len(junction_list)):
         if len(junction_list) == 1:
-            dot_bracket_seq_3 += input_seq[:junction_list[p][0]["start"]] + junction_list[p][0]["name"] + input_seq[junction_list[p][0]["end"]:]
+            junction_vis += input_seq[:junction_list[p][0]["start"]] + junction_list[p][0]["name"] + input_seq[junction_list[p][0]["end"]:]
             # jeśli tylko 1 skrzyżowanie, nowa sekwencja do początku do startu skrzyżowania i od końca skrzyżowania do końca sekwencji
         else:
             if p == 0:
-                dot_bracket_seq_3 += input_seq[:junction_list[p][0]["start"]] + junction_list[p][0]["name"] + \
+                junction_vis += input_seq[:junction_list[p][0]["start"]] + junction_list[p][0]["name"] + \
                                        input_seq[junction_list[p][0]["end"]:junction_list[p+1][0]["start"]]
 
             if p != 0 and p != (len(junction_list)-1):
-                dot_bracket_seq_3 += junction_list[p][0]["name"] + input_seq[junction_list[p][0]["end"]:junction_list[p+1][0]["start"]]
+                junction_vis += junction_list[p][0]["name"] + input_seq[junction_list[p][0]["end"]:junction_list[p+1][0]["start"]]
 
             if p == (len(junction_list)-1):
-                dot_bracket_seq_3 += junction_list[p][0]["name"] + input_seq[junction_list[p][0]["end"]:]
+                junction_vis += junction_list[p][0]["name"] + input_seq[junction_list[p][0]["end"]:]
                 # początek sekwencji do startu 1szej (indeks 0) struktury liniowej, nazwa struktury, zakres od jej końca do kolejnej
                 # (razy liczba struktur) i zakres do końca sekwencji
-    return dot_bracket_seq_3
+    return junction_vis
+
 
 junctions_visual = junction_visualization(input_sequence, junctions)
-
 print("Wizualizacja skrzyżowań:", junctions_visual)
 
 ########################################################
 ########################################################
-# teraz zaczyna się 2 pętla czyli łączenie skrzyzowań 1szorzędowych w skrzyżowania o kolejnych rzędowościach
-# odnajdywanie lewych i prawych stron wszystkich skrzyżowań
-print()
-print("I kolejne pętla:")
-
-left_junctions_side = left_and_right_structure_side(input_sequence, junctions)[0]
-right_junctions_side = left_and_right_structure_side(input_sequence, junctions)[1]
-print()
-
-######################
+# funkcje potrzebne w szukaniu struktur i skrzyżowań 2go i dalszorzedowych
 # odnajdywanie skrzyzowań na końcach struktur liniowych
 def find_hairpin_junctions(input_seq, left, right, junctions): # funkcja odnajdująca skrzyżowania będące odpowiednikami spinek do włosów tj na końcu str liniowych
     hairpin_junctions_list = []
     hairpin_junctions_left = []
     hairpin_junctions_right = []
     for n in range(len(junctions)):
-        if junctions[n][0]['start'] != 0 and junctions[n][0]['end'] != len(input_seq): # skrzyżowanie na początku i końcu sekwencji nie może być odpowiednikiem spinki
+        if junctions[n][0]['start'] != 0 or junctions[n][0]['end'] != len(input_seq): # skrzyżowanie na początku i końcu sekwencji nie może być odpowiednikiem spinki
             if input_seq[junctions[n][0]['start']-1] == "(" and input_seq[junctions[n][0]['end']+1] == ")": # skrzyżowanie-spinka jest otoczone "(" po lewej i ")" po prawej str
                 hairpin_junctions_list.append(junctions[n])
                 hairpin_junctions_left.append(left[n])
                 hairpin_junctions_right.append(right[n])
     return hairpin_junctions_list, hairpin_junctions_left, hairpin_junctions_right # tworzenie list ze skrzyżowaniami-sponkami i ic lewymi i prawymi stronami
 
-hairpin_junction_structures = find_hairpin_junctions(input_sequence, left_junctions_side, right_junctions_side, junctions)[0]
-hairpin_junction_left = find_hairpin_junctions(input_sequence, left_junctions_side, right_junctions_side, junctions)[1]
-hairpin_junction_right = find_hairpin_junctions(input_sequence, left_junctions_side, right_junctions_side, junctions)[2]
-print("Skrzyżowania - spinki:", hairpin_junction_structures)
-
 ##################
-# odnajdywanie struktur liniowych przyłączonych do skrzyzowań - spinek
-linear_structures2 = find_slb(hairpin_junction_left, hairpin_junction_right, hairpin_junction_structures)
-
-##################
-# normalizacja indeksów
-linear_structures2 = index_normalization(hairpin_junction_left, hairpin_junction_right, linear_structures2)
-
-print("Struktury liniowe (po znormalizowaniu indeksów):", linear_structures2)
-
-#################
 # lista wszystkich skrzyżowań - tych rozbudowywanych i tych nie
 def new_structures_list(junctions, linear_structures): #tworzenie listy z pozostałymi skrzyżowaniami i nowymi strukturami liniowymi
     for structure in junctions:
@@ -472,145 +444,23 @@ def new_structures_list(junctions, linear_structures): #tworzenie listy z pozost
             if structure[0]['name'] == linear_structures[n][0]['name']:
                 structure == linear_structures[n]
     return junctions
-
-linear_structures2 = new_structures_list(junctions, linear_structures2)
-print("I teraz wszystkie struktury razem:", linear_structures2)
-
-#################
-# odnajdywanie nowych - 2gorzedowych skrzyżowań
-junctions2 = junction_find(input_sequence, linear_structures2)
-print("Znaleziono takie skrzyżowania 2 rzędu:", junctions2)
-
-###############
-# wydłużanie 2rzędowych skrzyżowań
-junctions2 = junction_elongation(input_sequence, junctions2)
-print("Odnalezione skrzyżowania:", junctions2)
-print("Jest ich", len(junctions2))
-print()
-
-##############
-# wizualizacja skrzyżowań 2rzędowych
-junctions2_visual = junction_visualization(input_sequence, junctions2)
-
-print("Wizualizacja skrzyżowań:", junctions2_visual)
-#########################################################
-#########################################################
-print()
-print("I kolejna pętla (3cia już)")
-
-
-left_junctions_side = left_and_right_structure_side(input_sequence, junctions2)[0]
-right_junctions_side = left_and_right_structure_side(input_sequence, junctions2)[1]
-print()
-
-######################
-# odnajdywanie skrzyzowań na końcach struktur liniowych
-hairpin_junction_structures = find_hairpin_junctions(input_sequence, left_junctions_side, right_junctions_side, junctions2)[0]
-hairpin_junction_left = find_hairpin_junctions(input_sequence, left_junctions_side, right_junctions_side, junctions2)[1]
-hairpin_junction_right = find_hairpin_junctions(input_sequence, left_junctions_side, right_junctions_side, junctions2)[2]
-print("Skrzyżowania - spinki:", hairpin_junction_structures)
-
-##################
-# odnajdywanie struktur liniowych przyłączonych do skrzyzowań - spinek
-linear_structures3 = find_slb(hairpin_junction_left, hairpin_junction_right, hairpin_junction_structures)
-
-##################
-# normalizacja indeksów
-linear_structures3 = index_normalization(hairpin_junction_left, hairpin_junction_right, linear_structures3)
-
-print("Struktury liniowe (po znormalizowaniu indeksów):", linear_structures3)
-
-#################
-# lista wszystkich skrzyżowań - tych rozbudowywanych i tych nie
-
-linear_structures3 = new_structures_list(junctions2, linear_structures3)
-print("I teraz wszystkie struktury razem:", linear_structures3)
-
-#################
-# odnajdywanie nowych - 2gorzedowych skrzyżowań
-junctions3 = junction_find(input_sequence, linear_structures3)
-print("Znaleziono takie skrzyżowania 3 rzędu:", junctions3)
-
-###############
-# wydłużanie 2rzędowych skrzyżowań
-junctions3 = junction_elongation(input_sequence, junctions3)
-print("Odnalezione skrzyżowania:", junctions3)
-print("Jest ich", len(junctions3))
-print()
-
-##############
-# wizualizacja skrzyżowań 2rzędowych
-junctions3_visual = junction_visualization(input_sequence, junctions3)
-
-print("Wizualizacja skrzyżowań:", junctions3_visual)
-
-
 #######################################################
-print()
-print("I kolejna pętla (4ta już)")
-
-
-left_junctions_side = left_and_right_structure_side(input_sequence, junctions3)[0]
-right_junctions_side = left_and_right_structure_side(input_sequence, junctions3)[1]
-print()
-
-######################
-# odnajdywanie skrzyzowań na końcach struktur liniowych
-hairpin_junction_structures = find_hairpin_junctions(input_sequence, left_junctions_side, right_junctions_side, junctions3)[0]
-hairpin_junction_left = find_hairpin_junctions(input_sequence, left_junctions_side, right_junctions_side, junctions3)[1]
-hairpin_junction_right = find_hairpin_junctions(input_sequence, left_junctions_side, right_junctions_side, junctions3)[2]
-print("Skrzyżowania - spinki:", hairpin_junction_structures)
-
-##################
-# odnajdywanie struktur liniowych przyłączonych do skrzyzowań - spinek
-linear_structures4 = find_slb(hairpin_junction_left, hairpin_junction_right, hairpin_junction_structures)
-
-##################
-# normalizacja indeksów
-linear_structures4 = index_normalization(hairpin_junction_left, hairpin_junction_right, linear_structures4)
-
-print("Struktury liniowe (po znormalizowaniu indeksów):", linear_structures4)
-
-#################
-# lista wszystkich skrzyżowań - tych rozbudowywanych i tych nie
-
-linear_structures4 = new_structures_list(junctions3, linear_structures4)
-print("I teraz wszystkie struktury razem:", linear_structures4)
-
-#################
-# odnajdywanie nowych - 2gorzedowych skrzyżowań
-junctions4 = junction_find(input_sequence, linear_structures4)
-print("Znaleziono takie skrzyżowania 3 rzędu:", junctions4)
-
-###############
-# wydłużanie 2rzędowych skrzyżowań
-junctions4 = junction_elongation(input_sequence, junctions4)
-print("Odnalezione skrzyżowania:", junctions4)
-print("Jest ich", len(junctions4))
-print()
-
-##############
-# wizualizacja skrzyżowań 2rzędowych
-junctions4_visual = junction_visualization(input_sequence, junctions4)
-
-print("Wizualizacja skrzyżowań:", junctions4_visual)
 #######################################################
-
+# funkcja szukająca 2go i kolejnorzędowych struktur liniowych i skrzyżowań aż do końca sekwencji
 iteration_number = 1
 def the_ultimate_function(input_seq, junctions, iteration_number):
-    iteration_number += 1
+    # iteration_number += 1
 
-    print()
-    print("szukanie skrzyżowań", iteration_number, "rzędowych")
+    if junctions[0][0]['start'] == 0 and junctions[0][0]['end'] == len(input_seq):
+        print("koniec struktury")
+        return junctions
+    else:
+        iteration_number += 1
+        print()
+        print("szukanie struktur i skrzyżowań", iteration_number, "rzędowych")
+        left_junctions_side, right_junctions_side = left_and_right_structure_side(input_sequence, junctions)
 
-    if junctions[0][0]['end'] != len(input_seq):
-
-        left_junctions_side = left_and_right_structure_side(input_sequence, junctions)[0]
-        right_junctions_side = left_and_right_structure_side(input_sequence, junctions)[1]
-
-        hairpin_junction_structures = find_hairpin_junctions(input_sequence, left_junctions_side, right_junctions_side, junctions)[0]
-        hairpin_junction_left = find_hairpin_junctions(input_sequence, left_junctions_side, right_junctions_side, junctions)[1]
-        hairpin_junction_right = find_hairpin_junctions(input_sequence, left_junctions_side, right_junctions_side, junctions)[2]
+        hairpin_junction_structures, hairpin_junction_left, hairpin_junction_right = find_hairpin_junctions(input_sequence, left_junctions_side, right_junctions_side, junctions)
         print("Skrzyżowania - spinki:", hairpin_junction_structures)
 
         linear_structures = find_slb(hairpin_junction_left, hairpin_junction_right, hairpin_junction_structures)
@@ -618,25 +468,29 @@ def the_ultimate_function(input_seq, junctions, iteration_number):
         linear_structures = new_structures_list(junctions, linear_structures)
         print(iteration_number, "rzędowe struktury liniowe:", linear_structures)
 
-        junctions = junction_find(input_sequence, linear_structures)
-        junctions = junction_elongation(input_sequence, junctions)
-        print(iteration_number, "rzędowe skrzyżowania:", junctions)
-        print("Jest ich", len(junctions))
+        if len(linear_structures) > 1: # tylko jesli jest >1 skrzyżowanie będzie ono dalej łączone w skrzyżowania wyżejrzędowe
 
-        junctions_visual = junction_visualization(input_sequence, junctions)
-        print("Wizualizacja skrzyżowań", iteration_number, "rzędowych:", junctions_visual)
+            junctions = junction_find(input_sequence, linear_structures)
+            junctions = junction_elongation(input_sequence, junctions)
+            print(iteration_number, "rzędowe skrzyżowania:", junctions)
+            print("Jest ich", len(junctions))
 
-        return the_ultimate_function(input_seq, junctions, iteration_number)
+            junctions_visual = junction_visualization(input_sequence, junctions)
+            print("Wizualizacja skrzyżowań", iteration_number, "rzędowych:", junctions_visual)
 
-    else:
-        print("koniec struktury")
-        return junctions
+            return the_ultimate_function(input_seq, junctions, iteration_number)
+
+        else:
+            return linear_structures
 
 
-print()
 print()
 print("OSTATECZNA PĘTLA")
-# TODO nie działa dla example_mega : iteruje się w nieskonczoność... i w 4 pętli nie znajduje skrzyżowań - spinek
+# TODO nie działa dla example_mega : iteruje się w nieskonczoność...
+# przy szukaniu struktur 3ciorzędowych nie tworzy się lista ze skrzyżowaniami-spinkami
+# skrzyżowanie J0 ma strukturę liniową tylko po prawej stronie - nowa, dziwna struktura która nie jest ujęta w algorytmie - "spinka" na skrzyżowaniu 2ch spinek
+
+
 final_list = the_ultimate_function(input_sequence, junctions, iteration_number)
 print("OSTATECZNA LISTA SKRZYŻOWAŃ", final_list)
 
@@ -644,5 +498,4 @@ print("OSTATECZNA LISTA SKRZYŻOWAŃ", final_list)
 # odszukiwanie indeksów pseudowęzłów i przypisywanie ich do konkretnych struktur TODO
 
 # deal with igraph TODO
-
 
