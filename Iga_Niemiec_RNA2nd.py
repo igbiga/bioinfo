@@ -2,29 +2,46 @@
 # zamiana struktury 2nd RNA zapisane w formacie dot-bracket na graf przedstawiający rozmieszczenie poszczególnych struktur
 
 import re
-in_file = open("C:/Users/Igusia/Documents/example_500.txt")
-in_file2 = in_file.read().replace("\n", "")
-input_file = str(in_file2)
-#print("Plik wejsciowy: \n", input_file)
-#print()
-# importowanie pliku wejściowego, usunięcie newline i zamiana na string
+import igraph
 
-bases = ["A", "C", "U", "G", "N"]
-signs = [".", "(", ")", "[", "]", ">", "<", "{", "}"]
-# listy zasad azotowych (po nich następuje właściwa sekwencja dot-bracket), oraz znaków w poszukiewanym formacie
-
-def find_seq(raw_seq):
+def find_seq(input_file): # zwraca sekwencję w formacie dot-bracket z wczytywanego pliku
     sequence = ""
-    for i in range(len(raw_seq)):
-        if raw_seq[i] in bases and raw_seq[i+1] in signs and raw_seq[i+2] in signs and raw_seq[i+3] in signs:
-            sequence = (raw_seq[i+1:])
+    bases = ["A", "C", "U", "G", "N"]
+    signs = [".", "(", ")", "[", "]", ">", "<", "{", "}"]
+    # listy zasad azotowych (po nich następuje właściwa sekwencja dot-bracket), oraz znaków w poszukiewanym formacie
+    for i in range(len(input_file)):
+        if input_file[i] in bases and input_file[i+1] in signs and input_file[i+2] in signs and input_file[i+3] in signs:
+            sequence = (input_file[i+1:])
     return sequence
-# funkcja zwracająca sekwencję w formacie dot-bracket z wczytywanego pliku
-# szukająca pierwszych 3 znaków formatu d-b następujących po sekwencji zasad
 
-dot_bracket_seq = find_seq(input_file)
-#print("Sekwencja w formacie dot-bracket: \n", dot_bracket_seq)
-# wypisanie sekwencji w formacie d-b
+def collecting_input(): #otwiera wczytywany plik lub sekwencję i przekształca w sekwencję wejściową dla programu (w formacie dot-bracket)
+    print("If you want to load a file from RNA Soft STRAND database: print 'file'")
+    print("If you want to paste sequence in dot-bracket (dot-parenthesis) format: print 'sequence'")
+    file_or_seq = input("> ")
+
+    if file_or_seq == 'file':
+        print("Please paste path to the file")
+        file_path = input("> ")
+        in_file = open(file_path)
+        in_file2 = in_file.read().replace("\n", "")
+        input_file = str(in_file2) # importowanie pliku wejściowego, usunięcie newline i zamiana na string
+        dot_bracket_seq = find_seq(input_file)
+
+    elif file_or_seq == 'sequence':
+        print("Please paste the sequence in dot-bracket format")
+        input_seq = input("> ")
+        dot_bracket_seq = input_seq.replace("\n", "") # NIE DZIAŁA KIEDY JEST SEKWENCA W WIELU LINIJKACH TODO
+
+    else:
+        print("Please choose between 'file' and 'sequence'")
+        collecting_input()
+
+    return dot_bracket_seq
+
+dot_bracket_seq = collecting_input()
+
+print("Sekwencja w formacie dot-bracket:", dot_bracket_seq)
+
 
 ##########################################################################
 
@@ -423,7 +440,7 @@ print("Wizualizacja skrzyżowań:", junctions_visual)
 ########################################################
 ########################################################
 # funkcje potrzebne w szukaniu struktur i skrzyżowań 2go i dalszorzedowych
-# odnajdywanie skrzyzowań na końcach struktur liniowych
+# odnajdywanie skrzyzowań na końcach struktur liniowych które następnie będą rozbudowane do struktury liniowej
 def find_hairpin_junctions(input_seq, left, right, junctions): # funkcja odnajdująca skrzyżowania będące odpowiednikami spinek do włosów tj na końcu str liniowych
     hairpin_junctions_list = []
     hairpin_junctions_left = []
@@ -444,6 +461,7 @@ def new_structures_list(junctions, linear_structures): #tworzenie listy z pozost
             if structure[0]['name'] == linear_structures[n][0]['name']:
                 structure == linear_structures[n]
     return junctions
+
 #######################################################
 #######################################################
 # funkcja szukająca 2go i kolejnorzędowych struktur liniowych i skrzyżowań aż do końca sekwencji
@@ -453,7 +471,7 @@ def the_ultimate_function(input_seq, junctions, iteration_number):
 
     if junctions[0][0]['start'] == 0 and junctions[0][0]['end'] == len(input_seq):
         print("koniec struktury")
-        return junctions
+        return junctions, iteration_number
     else:
         iteration_number += 1
         print()
@@ -481,21 +499,115 @@ def the_ultimate_function(input_seq, junctions, iteration_number):
             return the_ultimate_function(input_seq, junctions, iteration_number)
 
         else:
-            return linear_structures
+            return linear_structures, iteration_number
 
 
-print()
-print("OSTATECZNA PĘTLA")
+
 # TODO nie działa dla example_mega : iteruje się w nieskonczoność...
 # przy szukaniu struktur 3ciorzędowych nie tworzy się lista ze skrzyżowaniami-spinkami
 # skrzyżowanie J0 ma strukturę liniową tylko po prawej stronie - nowa, dziwna struktura która nie jest ujęta w algorytmie - "spinka" na skrzyżowaniu 2ch spinek
 
 
-final_list = the_ultimate_function(input_sequence, junctions, iteration_number)
-print("OSTATECZNA LISTA SKRZYŻOWAŃ", final_list)
+final_list, iteration_number = the_ultimate_function(input_sequence, junctions, iteration_number)
+print("Ostateczna lista skrzyżowań", final_list)
+print("iteration number:", iteration_number)
+
+###################################################################################
+###################################################################################
+# tworzenie grafu wizualizującego struktury liniowe
+print()
+print("WIZUALIZACJA")
+
+def find_structures(junctions): # funkcja odnajdujaca struktury i zapisująca ich nazwy oraz długości do list
+    v_names = [] #lista z nazwami struktur
+    v_length = [] # lista z długościami struktur
+
+    for structure in junctions:
+        for n in range(len(structure)-1, -1, -1): #iteracja od tyłu, aby spinki znajdowały się "na końcu"
+
+            if structure[n]['type'] == 'junction':
+                v_names.append(structure[n]['type'])
+                v_length.append(structure[n]['length'])
+
+                junctions = structure[n]['content'] # jesli struktura jest skrzyżowaniem powtórne wywołanie funkcji na nowych argumentach
+
+                temporary_v_names, temporary_v_length = find_structures(junctions)
+                v_names.extend(temporary_v_names) # dodanie nazwy i długości skrzyżowania do odpowiednich list
+                v_length.extend(temporary_v_length)
+
+            else:
+                v_names.append(structure[n]['type']) # dodanie nazwy i długości struktury do odpowiednich list
+                v_length.append(structure[n]['length'])
+
+    return v_names, v_length
+
+v_names_raw, v_lengths_raw = find_structures(final_list)
+
+#################################################
+# usuwanie z listy pseudoskrzżowań - skrzyżowań bezposrednio połączonych ze sobą, które są artefaktem działania algorytmu
+v_names = [] # nowa
+v_lengths = []
+for i in range(len(v_names_raw)):
+    if v_names_raw[i] == "junction" and v_names_raw[i+1] == "junction": # jeśli 2 skrzyżowania są bezpośrednio obok siebie, 1 z nich nie zostaje dopisane do kolejnej listy
+        None
+    else:
+        v_names.append(v_names_raw[i])
+        v_lengths.append(v_lengths_raw[i])
+
+print()
+print("nazwy struktur", v_names)
+print("długosci struktur", v_lengths)
+print("ilość struktur", (len(v_names)))
+
+#########################
+# funkcja wyszukująca połączenia miedzy strukturami i dodająca krawędzie do listy
+def find_edges(v_names):
+    edges = []
+    for n in range(len(v_names)):
+        if v_names[n] == "stem": # pień jest bezpośrednio połączony liniowo ze strukturami po obu jego stronach
+
+            if n != 0:
+                if v_names[n-1] != "hairpin":
+                    edges.append((n-1, n))
+
+                else:
+                    for k in range(0, n):
+                        if v_names[k] == 'junction':
+                            junction_for_stem = k
+
+                    edges.append((junction_for_stem, n))
+
+            edges.append((n, n+1))
+
+    return edges
+
+
+edges_list = find_edges(v_names)
+print("lista krawędzi:", edges_list)
+
+###############################################
+# twrzenie grafu za pomocą pakietu igraph i wizualizacja za pomoca pakietu cairo
+
+rna_graph = igraph.Graph(edges_list) # tworzenie grafu w oparciu o stworzoną listę krawędzi
+
+rna_graph.vs["name"] = v_names # właściwości wierzchołków - nazwy struktur
+rna_graph.vs["length"] = v_lengths # i ich długości
+
+rna_graph_layout = rna_graph.layout("kk") # wybór wizualizacji (graf nieskierowany Kamada-Kawai)
+plot(rna_graph, layout = rna_graph_layout) # rysowanie grafu
+
+
+color_dict = {"stem":"brown", "hairpin":"red", "bulge":"green", "loop":"blue", "junction":"yellow"} # dodanie kodu kolorów oznaczających różne struktury
+
+visual_style = {} # dodanie dodatkowych parametrów wizualnych grafu
+visual_style["vertex_size"] = rna_graph.vs["length"] + 20 # wielkość wierzchołka zalezy od długości struktury
+visual_style["vertex_color"] = [color_dict[name] for name in rna_graph.vs["name"]] #kolor wierzchołka zalezy od rodzaju struktury
+visual_style["vertex_label"] = rna_graph.vs["name"] #metka wierzchołka jest rodzajem jego struktury
+visual_style["layout"] = rna_graph_layout # wyspecyfikowany wcześniej rodzaj wizualizacji
+plot(rna_graph, **visual_style) #graf zawierający wszystkie dodatkowe atrybuty
+
 
 
 # odszukiwanie indeksów pseudowęzłów i przypisywanie ich do konkretnych struktur TODO
 
-# deal with igraph TODO
 
